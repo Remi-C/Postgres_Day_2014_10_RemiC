@@ -14,8 +14,16 @@ SET search_path to benchmark, public;
 		gid SERIAL PRIMARY KEY
 		,geom GEOMETRY(polygon, 932011)
 	);
-	CREATE INDEX ON def_visu_qgis USING GIST(geom)
+	CREATE INDEX ON def_visu_qgis USING GIST(geom) ;
 
+	SELECT ST_AsText(geom)
+	FROM def_visu_qgis;
+
+	INSERT INTO def_visu_qgis 
+		VALUES (1
+			,ST_GeomFromText('POLYGON((1903.45913441048 21233.7080609571,1908.2997280885 21233.8251720944,1908.14357990534 21229.6091711491,1903.14683804416 21229.6482081949,1903.45913441048 21233.7080609571))'
+				,932011)
+			);
 --creating a tabele with all the point in the given def_visu_qgis are
 
 	DROP TABLE IF EXISTS point_in_visu_qgis ;
@@ -43,15 +51,15 @@ SET search_path to benchmark, public;
 	CREATE INDEX ON point_in_visu_qgis USING GIST(geom);
 	CREATE INDEX ON point_in_visu_qgis (patch_id);
 	CREATE INDEX ON point_in_visu_qgis (gps_time);
-	CREATE INDEX ON point_in_visu_qgis (x);
-	CREATE INDEX ON point_in_visu_qgis (y);
+	--CREATE INDEX ON point_in_visu_qgis (x);
+	--CREATE INDEX ON point_in_visu_qgis (y);
 	CREATE INDEX ON point_in_visu_qgis (z);
-	CREATE INDEX ON point_in_visu_qgis (x_origin);
-	CREATE INDEX ON point_in_visu_qgis (y_origin);
-	CREATE INDEX ON point_in_visu_qgis (z_origin);
+	--CREATE INDEX ON point_in_visu_qgis (x_origin);
+	--CREATE INDEX ON point_in_visu_qgis (y_origin);
+	--CREATE INDEX ON point_in_visu_qgis (z_origin);
 	CREATE INDEX ON point_in_visu_qgis (reflectance);
-	CREATE INDEX ON point_in_visu_qgis (range);
-	CREATE INDEX ON point_in_visu_qgis (theta);
+	--CREATE INDEX ON point_in_visu_qgis (range);
+	--CREATE INDEX ON point_in_visu_qgis (theta);
 	CREATE INDEX ON point_in_visu_qgis (id);
 	CREATE INDEX ON point_in_visu_qgis (class);
 	CREATE INDEX ON point_in_visu_qgis (num_echo);
@@ -59,12 +67,9 @@ SET search_path to benchmark, public;
 
 --creating a function to synch the proxy point tbale content with ht epoint in the patch in the defined_zone
 
-		DROP FUNCTION IF EXISTS rc_synch_point_in_visu_qgis();
-
-		----
-		--creating function
+		DROP FUNCTION IF EXISTS rc_synch_point_in_visu_qgis(); 
 		CREATE OR REPLACE FUNCTION rc_synch_point_in_visu_qgis( )
-		RETURNS  VOID AS $$ 
+		RETURNS  TRIGGER AS $$ 
 			--@brief this function synvh the content of point_in_visu_qgis with the conten of patch in def_visu_qgis
 		 
 		BEGIN 
@@ -107,8 +112,12 @@ SET search_path to benchmark, public;
 					FROM (SELECT gid AS patch_id, PC_Explode(patch) AS pt FROM patch_to_be_synced ) AS pt
 					WHERE NOT EXISTS (--we don't want to insert point that are already there. Note that this is not mutliprocess safe ! 
 						SELECT 1 FROM benchmark.point_in_visu_qgis AS ptb WHERE pt.patch_id =ptb.gid  );
-					   
-		RETURN  ;
+
+		IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE'
+		THEN RETURN NEW;
+		ELSE 
+			RETURN OLD;
+		END IF ; 
 		END;
 		$$ LANGUAGE 'plpgsql' VOLATILE;
 
@@ -118,4 +127,30 @@ SET search_path to benchmark, public;
 
  --creating a trigger on the area to launch sync each time there is a change in it 
 
- 
+			--editing triggers  
+		CREATE OR REPLACE FUNCTION rc_sync_patch_to_be_synced_on_def_visu_qgis_changes(  )
+		  RETURNS  trigger  AS
+		$BODY$ 
+			--this trigger  is designed to update the geometry of edge of a moving node.
+			--we consider that by default a change of geom in node means no topological change
+				DECLARE  
+				BEGIN 
+						SELECT 
+				 
+				RETURN NEW;
+				END ;
+				$BODY$
+		  LANGUAGE plpgsql VOLATILE;
+
+		DROP TRIGGER IF EXISTS  rc_sync_patch_to_be_synced_on_def_visu_qgis_changes ON def_visu_qgis; 
+		CREATE  TRIGGER rc_sync_patch_to_be_synced_on_def_visu_qgis_changes   AFTER  UPDATE OR INSERT OR DELETE
+		    ON def_visu_qgis
+		 FOR EACH ROW  
+		    EXECUTE PROCEDURE rc_synch_point_in_visu_qgis(); 
+
+
+
+SELECT *
+FROM point_in_visu_qgis
+ORDER BY x,y,z   
+LIMIT 10
