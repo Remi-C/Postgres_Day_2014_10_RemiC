@@ -61,7 +61,7 @@ SET search_path TO patch_to_raster,benchmark,public;
 
 	--get all patch in the defined area
 	WITH patch  AS (
-		SELECT rps.gid -- ,patch --, pc_NumPoints(patch) aS numpoints
+		SELECT rps.gid ,patch --, pc_NumPoints(patch) aS numpoints
 		FROM riegl_pcpatch_space as rps
 			INNER JOIN def_raster_qgis AS drq 
 			ON (ST_Intersects(drq.geom,ST_SetSRID( patch::geometry ,932011) )  )
