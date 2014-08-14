@@ -48,13 +48,12 @@ SET search_path TO patch_to_raster,benchmark,public;
 
 --now, convert every patch in the def_raster_qgis to a raster
 
-	--create a raster table to hold result : 
-	
+	--create a raster table to hold result :  
 	DROP TABLE IF EXISTS rasterized_patch;
 	CREATE TABLE rasterized_patch (
 		rid INT PRIMARY KEY
 		,rast   raster
-		 ,FOREIGN KEY (rid) REFERENCES riegl_pcpatch_space (gid)
+		-- ,FOREIGN KEY (rid) REFERENCES riegl_pcpatch_space (gid)
 	);
 	TRUNCATE rasterized_patch ;
 
@@ -84,9 +83,9 @@ SET search_path TO patch_to_raster,benchmark,public;
 
 	--activate output for psotgis raster :
 		SET postgis.enable_outdb_rasters TO 'ON';
-		SET postgis.gdal_enabled_drivers TO 'ENABLE_ALL'
+		SET postgis.gdal_enabled_drivers TO 'ENABLE_ALL';
 	--output the patches on the server : 
-	SELECT write_file(ST_AsTIFF( rast ), '/tmp/rast_' || rid || '.tif','777'::character varying (4) )
+	SELECT write_file(ST_AsTIFF( rast ), '/tmp/rast_' || rid || '_2_2.tif','777'::character varying (4) )
 	FROM  rasterized_patch ;
 
  
@@ -118,18 +117,22 @@ SET search_path TO patch_to_raster,benchmark,public;
 		--comapcting all the patches in the area into one, then outputting one raster.
 
 			WITH patch  AS (
-				SELECT 0 AS gid, PC_Union( patch ) AS patch--rps.gid ,patch --, pc_NumPoints(patch) aS numpoints
+				SELECT 1 AS gid, PC_Union( patch ) AS patch--rps.gid ,patch --, pc_NumPoints(patch) aS numpoints
 				FROM riegl_pcpatch_space as rps
 					INNER JOIN def_raster_qgis AS drq 
 					ON (ST_Intersects(drq.geom,ST_SetSRID( patch::geometry ,932011) )  )
 				--WHERE gid = 361783   -- OR gid=361784 --big patch
 				--WHERE gid = 360004 --little patch
 				--WHERE   ST_Area(ST_SetSRID(CAST(patch AS geometry ),932011))>0.8 
+				LIMIT 1 
 			),
 			arr AS ( 
 				--SELECT ARRAY ['patch_id,gps_time,x,y,z,x_origin,y_origin,z_origin,reflectance,range,theta,id,class,num_echo,nb_of_echo' ] AS dimensions
 				SELECT ARRAY ['gps_time','x','y','z','x_origin','y_origin','z_origin','reflectance','range','theta','id','class','num_echo','nb_of_echo' ] AS dimensions
+				--SELECT ARRAY ['gps_time','x','y','z'] AS dimensions
 			)
+			--SELECT ST_SUmmary(rc_Patch2Raster_arar(patch,dimensions,0.05 ))
+			--FROM patch,arr
 			INSERT INTO rasterized_patch (rid, rast)
 				SELECT gid AS rid,  ST_SetSRID( rc_Patch2Raster_arar(patch,dimensions,0.05 ),932011)  AS rast
 				FROM patch,arr;
@@ -179,6 +182,4 @@ SET search_path TO patch_to_raster,benchmark,public;
   
 
  
-
-
-
+--------------------------------
