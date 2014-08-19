@@ -50,20 +50,22 @@ SET search_path TO building_border_detection, public;
 	--CREATE TABLE skeleton AS 
 	DROP TABLE filtered_skeleton ;
 	CREATE TABLE filtered_skeleton AS 
-	
+	--CREATE TABLE skeleton_of_area AS 
 	WITH the_input_parameter AS (
 		SELECT 0.1 AS spatial_fuzziness
 			,0.5 AS building_fuzziness 
+			,5 AS minimal_building_size
 			LIMIT 1 
 	)
 	,input_points AS ( --getting the input point, plus making a confidence measure out of number of laser point per pixel
 		SELECT gid, ST_Centroid(geom) AS pixel_center, accum/ (( SELECT max(accum) FROM border_pixel_as_polygon_clean) ) AS confidence
-		FROM border_pixel_as_polygon_clean
-		--LIMIT 100
+		FROM border_pixel_as_polygon_clean 
 	)
 	,fuzzy_area AS (--we convert the point into fuzzy area.
-		SELECT ST_Union(ST_Buffer(pixel_center,1.5*spatial_fuzziness , 'endcap=square')) AS fuzzy_areas
+		--order is not necessary : but usefull for reproductibility
+		SELECT ST_Union(ST_Buffer(ST_Buffer(pixel_center,1.5*spatial_fuzziness +building_fuzziness , 'endcap=square'),-building_fuzziness- spatial_fuzziness,'endcap=square')   ORDER BY gid ASC) AS fuzzy_areas
 		FROM the_input_parameter,input_points
+		
 	)
 	,dmped_fuzzy_area AS ( --we separate the multi geom into separate fuzzy area
 		SELECT dmp_area.path  AS area_id,  ST_Simplify(dmp_area.geom,spatial_fuzziness/2) as fuzzy_area
@@ -84,6 +86,7 @@ SET search_path TO building_border_detection, public;
 		SELECT  df.fuzzy_area , cp.*
 		FROM confidence_per_area AS cp 
 			NATURAL JOIN dmped_fuzzy_area as df
+		--WHERE area_id[1] = 104
 	)  
 	,skeleton_of_area AS ( --we use the straight skeleton
 		SELECT  area_id, skeleton.path AS skeleton_id , skeleton.geom AS area_skeleton
@@ -96,10 +99,16 @@ SET search_path TO building_border_detection, public;
 				SELECT 1
 				FROM skeleton_of_area AS sko2
 				WHERE (sko1.area_id = sko2.area_id AND sko1.skeleton_id != sko2.skeleton_id) 
-					AND (ST_DWithin(ST_EndPoint(sko2.area_skeleton),sko1.area_skeleton,tip.spatial_fuzziness )=TRUE
-						AND ST_DWithin(ST_StartPoint(sko2.area_skeleton),sko1.area_skeleton,tip.spatial_fuzziness )=TRUE
+					AND (ST_DWithin(ST_EndPoint(sko1.area_skeleton),sko2.area_skeleton,tip.spatial_fuzziness/2.0 )=TRUE
 					)
-				)
+				)	
+				AND  EXISTS (
+				SELECT 1
+				FROM skeleton_of_area AS sko2
+				WHERE (sko1.area_id = sko2.area_id AND sko1.skeleton_id != sko2.skeleton_id) 
+					AND (ST_DWithin(ST_StartPoint(sko1.area_skeleton),sko2.area_skeleton,tip.spatial_fuzziness/2.0 )=TRUE
+					)
+				)   
 	)
 	 
 	--,reducing_area AS (--we comput the reduced area to be able to filter the straight skeleton
@@ -112,13 +121,15 @@ SET search_path TO building_border_detection, public;
 	--		INNER JOIN reducing_area as ra ON (ra.area_id = so.area_id AND ST_Within(so.area_skeleton,ra.reduced_area)=TRUE )
 	--)
 	SELECT row_number() over() AS qgis_id, fs.area_id --, fs.skeleton_id
-		, ST_Simplify(ST_Union(fs.area_skeleton),building_fuzziness ) AS area_skeleton
+		, ST_Simplify(ST_LineMerge(ST_Union(fs.area_skeleton)),minimal_building_size ) AS area_skeleton
 		,max(aw.sum_area_confidence ) AS sum_area_confidence
 		,max(aw.max_area_confidence ) AS max_area_confidence
 		,max(aw.points_in_area ) AS  points_in_area
 	FROM the_input_parameter , removing_isolated_sskeleton_parts as fs
 		LEFT OUTER JOIN area_with_confidence AS aw ON (fs.area_id = aw.area_id)
-	GROUP BY fs.area_id, the_input_parameter.building_fuzziness
+	GROUP BY fs.area_id
+		--, the_input_parameter.building_fuzziness 
+		,  the_input_parameter.minimal_building_size 
 
 	 
 
