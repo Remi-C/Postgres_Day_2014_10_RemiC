@@ -70,7 +70,31 @@ result_filtering = filter_accum_points * filter_relativ_height ;
 #result_filtering[(0 < result_filtering) & (result_filtering < 100)].size
 #result_filtering[(100 < result_filtering) & (result_filtering < 2000)].size
 
-#filtering to keep only 
+
+#using some kind of straight skeleton on the result :
+from skimage.morphology import skeletonize ;
+from skimage.morphology import erosion, dilation, opening, closing, white_tophat , binary_closing;
+from skimage.morphology import disk
+
+import matplotlib.pyplot as plt
+data_for_skeleton = result_filtering ;
+data_for_skeleton[data_for_skeleton>0]=1 ;
+imshow(data_for_skeleton, cmap=plt.cm.gray)
+plt.show()
+
+selem = disk(5) ;
+closed = binary_closing(data_for_skeleton, selem) ;
+imshow(closed, cmap=plt.cm.gray)
+plt.show()
+closed[closed>0]=1 ;
+skeleton = skeletonize(data_for_skeleton)
+
+imshow(skeleton, cmap=plt.cm.gray)
+plt.show()
+
+
+
+
 #outputting the raster to see if it worked :
     
  
@@ -81,8 +105,8 @@ geotransform = gtif.GetGeoTransform()
 rasterOrigin = (geotransform[0],geotransform[3])
 pixelWidth = geotransform[1] ; 
 pixelHeight = geotransform[5] ; 
-newRasterfn = dest_folder+'result_relativ_height'+strftime("%Y-%m-%d_%H_%M_%S", gmtime()) +'.tif'
-array = result_filtering
+newRasterfn = dest_folder+'result_straight_skeleton'+strftime("%Y-%m-%d_%H_%M_%S", gmtime()) +'.tif'
+array = skeleton
 array2raster(newRasterfn,rasterOrigin,pixelWidth,pixelHeight,array) ;# convert array to raster
 
 #help(gdal.ReprojectImage)
