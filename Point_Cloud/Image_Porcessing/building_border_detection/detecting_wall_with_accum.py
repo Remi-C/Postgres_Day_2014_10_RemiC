@@ -93,13 +93,31 @@ imshow(skeleton, cmap=plt.cm.gray)
 plt.show()
 
 
+#working on sidewalk :
+"""
+    We work on sidewalk : we use the relative height to compute the gradient 
+    of it. Then we perform thresholding then closing then straight sekeleton
 
+"""
+
+from skimage.morphology import disk
+from skimage.filter.rank import gradient,threshold ;
+from skimage import img_as_float; 
+
+#filtering the relative height again :
+filter_relativ_height_sidewalk = relativ_height ;
+filter_relativ_height_sidewalk[(filter_relativ_height_sidewalk<-3)&(filter_relativ_height_sidewalk>-2)] = 0 ;
+#filter_relativ_height_sidewalk[filter_relativ_height_sidewalk!=0] = 1 ;
+filter_relativ_height_sidewalk = filter_relativ_height_sidewalk.astype(bool);
+
+
+convert_to_float = img_as_float(filter_relativ_height_sidewalk) ;
+convert_to_float[convert_to_float!=0]
+grad = gradient(img_as_float(filter_relativ_height_sidewalk),disk(5)) ;
+imshow(grad, cmap=plt.cm.gray); plt.show();
 
 #outputting the raster to see if it worked :
     
- 
- 
- 
 geotransform = gtif.GetGeoTransform()
 
 rasterOrigin = (geotransform[0],geotransform[3])
