@@ -130,23 +130,3 @@ SET search_path TO building_border_detection, public;
 	GROUP BY fs.area_id
 		--, the_input_parameter.building_fuzziness 
 		,  the_input_parameter.minimal_building_size 
-
-	 
-
-
-	 
-
-
-	WITH area_with_confidence AS (
-		SELECT ST_Astext(ST_SnapToGrid(fuzzy_area,0.01) ) AS snapped, *  
-		FROM area_with_confidence
-		WHERE area_id[1] = 39
-	) 
-	SELECT ST_AsText(ST_StraightSkeleton( snapped  ))
-	FROM area_with_confidence
-
-
-	--
-
-	SELECT ST_AsText(ST_StraightSkeleton(geom))
-	FROM ST_GeomFromText('POLYGON((1914.52 21143.76,1914.52 21143.46,1914.22 21143.46,1914.22 21143.76,1914.12 21143.76,1914.12 21144.46,1914.42 21144.46,1914.42 21143.76,1914.52 21143.76))') as geom
