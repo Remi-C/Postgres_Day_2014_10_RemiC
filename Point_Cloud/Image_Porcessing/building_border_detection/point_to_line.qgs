@@ -5,10 +5,10 @@
     <mapcanvas>
         <units>meters</units>
         <extent>
-            <xmin>1885.12766165397374607</xmin>
-            <ymin>21109.53578829339676304</ymin>
-            <xmax>1942.21665129129655725</xmax>
-            <ymax>21145.07828829340724042</ymax>
+            <xmin>1892.6678267773791049</xmin>
+            <ymin>21143.45077379841313814</ymin>
+            <xmax>1922.88815967894288406</xmax>
+            <ymax>21164.06040012350786128</ymax>
         </extent>
         <projections>1</projections>
         <destinationsrs>
@@ -24,7 +24,7 @@
             </spatialrefsys>
         </destinationsrs>
     </mapcanvas>
-    <legend updateDrawingOrder="true" activeLayer="volume_non_bati20140818191919281">
+    <legend updateDrawingOrder="true" activeLayer="result_sobel_plus_mask2014_08_19_16_49_05_copier20140820104639609">
         <legendlayer drawingOrder="-1" open="true" checked="Qt::Unchecked" name="building_border_detection_points" showFeatureCount="0">
             <filegroup open="true" hidden="false">
                 <legendlayerfile isInOverview="0" layerid="building_border_detection_points20140818193916718" visible="0"/>
@@ -91,10 +91,15 @@
                 </filegroup>
             </legendlayer>
         </legendgroup>
-        <legendgroup open="true" checked="Qt::PartiallyChecked" name="SideWalk">
-            <legendlayer drawingOrder="-1" open="false" checked="Qt::Checked" name="result_sobel_plus_mask2014-08-19_16_49_05" showFeatureCount="0">
+        <legendgroup open="true" checked="Qt::Unchecked" name="SideWalk">
+            <legendlayer drawingOrder="-1" open="false" checked="Qt::Unchecked" name="result_sobel_plus_mask_sidewalk" showFeatureCount="0">
                 <filegroup open="false" hidden="false">
-                    <legendlayerfile isInOverview="0" layerid="result_sobel_plus_mask2014_08_19_16_49_0520140819185830609" visible="1"/>
+                    <legendlayerfile isInOverview="0" layerid="result_sobel_plus_mask2014_08_19_16_49_0520140819185830609" visible="0"/>
+                </filegroup>
+            </legendlayer>
+            <legendlayer drawingOrder="-1" open="false" checked="Qt::Unchecked" name="result_sobel_plus_mask_texture" showFeatureCount="0">
+                <filegroup open="false" hidden="false">
+                    <legendlayerfile isInOverview="0" layerid="result_sobel_plus_mask2014_08_19_16_49_05_copier20140820104639609" visible="0"/>
                 </filegroup>
             </legendlayer>
             <legendlayer drawingOrder="-1" open="false" checked="Qt::Unchecked" name="input_sidewalk_raster_1_all_attributes_min" showFeatureCount="0">
@@ -104,7 +109,7 @@
             </legendlayer>
         </legendgroup>
     </legend>
-    <projectlayers layercount="14">
+    <projectlayers layercount="15">
         <maplayer minimumScale="-4.65661e-10" maximumScale="1e+08" simplifyDrawingHints="1" minLabelScale="0" maxLabelScale="1e+08" simplifyDrawingTol="1" geometry="Polygon" simplifyMaxScale="1" type="vector" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" scaleBasedLabelVisibilityFlag="0">
             <id>area_with_confidence20140818205133250</id>
             <datasource>dbname='conf_postgres' host=localhost port=5433 user='postgres' password='postgres' sslmode=disable key='tid' srid=932011 type=POLYGON table="building_border_detection"."area_with_confidence" (fuzzy_area) sql=</datasource>
@@ -1771,7 +1776,7 @@
             <excludeAttributesWFS/>
             <attributeactions/>
         </maplayer>
-        <maplayer minimumScale="0" maximumScale="1e+08" simplifyDrawingHints="1" minLabelScale="0" maxLabelScale="1e+08" simplifyDrawingTol="1" geometry="Line" simplifyMaxScale="1" type="vector" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" scaleBasedLabelVisibilityFlag="0">
+        <maplayer minimumScale="-4.65661e-10" maximumScale="1e+08" simplifyDrawingHints="1" minLabelScale="0" maxLabelScale="1e+08" simplifyDrawingTol="1" geometry="Line" simplifyMaxScale="1" type="vector" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" scaleBasedLabelVisibilityFlag="0">
             <id>filtered_skeleton20140818210609703</id>
             <datasource>dbname='conf_postgres' host=localhost port=5433 user='postgres' password='postgres' sslmode=disable key='tid' srid=932011 type=LINESTRING table="building_border_detection"."filtered_skeleton" (area_skeleton) sql=</datasource>
             <title></title>
@@ -1798,9 +1803,9 @@
             <renderer-v2 symbollevels="0" type="singleSymbol">
                 <symbols>
                     <symbol alpha="1" type="line" name="0">
-                        <layer pass="0" class="SimpleLine" locked="0">
+                        <layer pass="0" class="SimpleLine" locked="1">
                             <prop k="capstyle" v="round"/>
-                            <prop k="color" v="122,245,0,255"/>
+                            <prop k="color" v="0,0,0,255"/>
                             <prop k="customdash" v="5;2"/>
                             <prop k="customdash_unit" v="MM"/>
                             <prop k="draw_inside_polygon" v="0"/>
@@ -1809,21 +1814,21 @@
                             <prop k="offset_unit" v="MM"/>
                             <prop k="penstyle" v="solid"/>
                             <prop k="use_custom_dash" v="0"/>
-                            <prop k="width" v="0.5"/>
+                            <prop k="width" v="1"/>
                             <prop k="width_unit" v="MM"/>
                         </layer>
-                        <layer pass="0" class="SimpleLine" locked="1">
+                        <layer pass="20" class="SimpleLine" locked="0">
                             <prop k="capstyle" v="round"/>
-                            <prop k="color" v="85,170,0,255"/>
+                            <prop k="color" v="148,17,17,255"/>
                             <prop k="customdash" v="5;2"/>
                             <prop k="customdash_unit" v="MM"/>
                             <prop k="draw_inside_polygon" v="0"/>
                             <prop k="joinstyle" v="round"/>
                             <prop k="offset" v="0"/>
                             <prop k="offset_unit" v="MM"/>
-                            <prop k="penstyle" v="dot"/>
+                            <prop k="penstyle" v="solid"/>
                             <prop k="use_custom_dash" v="0"/>
-                            <prop k="width" v="0.5"/>
+                            <prop k="width" v="0.92228"/>
                             <prop k="width_unit" v="MM"/>
                         </layer>
                     </symbol>
@@ -3132,7 +3137,48 @@
             <keywordList>
                 <value></value>
             </keywordList>
-            <layername>result_sobel_plus_mask2014-08-19_16_49_05</layername>
+            <layername>result_sobel_plus_mask_sidewalk</layername>
+            <srs>
+                <spatialrefsys>
+                    <proj4>+proj=lcc +lat_1=44 +lat_2=49 +lat_0=46.5 +lon_0=3 +x_0=51000 +y_0=-240000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs</proj4>
+                    <srsid>100000</srsid>
+                    <srid>0</srid>
+                    <authid>USER:100000</authid>
+                    <description> * SCR généré (+proj=lcc +lat_1=44 +lat_2=49 +lat_0=46.5 +lon_0=3 +x_0=51000 +y_0=-240000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs)</description>
+                    <projectionacronym>lcc</projectionacronym>
+                    <ellipsoidacronym>GRS80</ellipsoidacronym>
+                    <geographicflag>false</geographicflag>
+                </spatialrefsys>
+            </srs>
+            <customproperties>
+                <property key="identify/format" value="Value"/>
+            </customproperties>
+            <provider>gdal</provider>
+            <pipe>
+                <rasterrenderer opacity="1" alphaBand="-1" classificationMax="0.12" classificationMinMaxOrigin="User" band="1" classificationMin="0.01" type="singlebandpseudocolor">
+                    <rasterTransparency/>
+                    <rastershader>
+                        <colorrampshader colorRampType="INTERPOLATED" clip="0">
+                            <item alpha="255" value="0.01" label="0.010000" color="#8f8626"/>
+                            <item alpha="255" value="0.12" label="0.120000" color="#c80000"/>
+                        </colorrampshader>
+                    </rastershader>
+                </rasterrenderer>
+                <brightnesscontrast brightness="0" contrast="0"/>
+                <huesaturation colorizeGreen="128" colorizeOn="0" colorizeRed="255" colorizeBlue="128" grayscaleMode="0" saturation="0" colorizeStrength="100"/>
+                <rasterresampler maxOversampling="2"/>
+            </pipe>
+            <blendMode>0</blendMode>
+        </maplayer>
+        <maplayer minimumScale="-4.65661e-10" maximumScale="1e+08" type="raster" hasScaleBasedVisibilityFlag="0">
+            <id>result_sobel_plus_mask2014_08_19_16_49_05_copier20140820104639609</id>
+            <datasource>../sidewalk_border_detection/result_sobel_plus_mask2014-08-19_16_49_05.tif</datasource>
+            <title></title>
+            <abstract></abstract>
+            <keywordList>
+                <value></value>
+            </keywordList>
+            <layername>result_sobel_plus_mask_texture</layername>
             <srs>
                 <spatialrefsys>
                     <proj4>+proj=lcc +lat_1=44 +lat_2=49 +lat_0=46.5 +lon_0=3 +x_0=51000 +y_0=-240000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs</proj4>
@@ -3150,12 +3196,12 @@
             </customproperties>
             <provider>gdal</provider>
             <pipe>
-                <rasterrenderer opacity="1" alphaBand="-1" classificationMax="0.12" classificationMinMaxOrigin="User" band="1" classificationMin="0.01" type="singlebandpseudocolor">
+                <rasterrenderer opacity="1" alphaBand="0" classificationMax="0.01" classificationMinMaxOrigin="User" band="1" classificationMin="0" type="singlebandpseudocolor">
                     <rasterTransparency/>
                     <rastershader>
                         <colorrampshader colorRampType="INTERPOLATED" clip="0">
-                            <item alpha="255" value="0.01" label="0.010000" color="#8f8626"/>
-                            <item alpha="255" value="0.12" label="0.120000" color="#c80000"/>
+                            <item alpha="255" value="0" label="0.000000" color="#fafafa"/>
+                            <item alpha="255" value="0.01" label="0.010000" color="#050505"/>
                         </colorrampshader>
                     </rastershader>
                 </rasterrenderer>
@@ -3683,10 +3729,10 @@
                 <edittype labelontop="0" editable="1" type="0" name="libelle"/>
                 <edittype labelontop="0" editable="1" type="0" name="niveau"/>
             </edittypes>
-            <editform></editform>
+            <editform>.</editform>
             <editforminit></editforminit>
             <featformsuppress>0</featformsuppress>
-            <annotationform></annotationform>
+            <annotationform>.</annotationform>
             <editorlayout>generatedlayout</editorlayout>
             <excludeAttributesWMS/>
             <excludeAttributesWFS/>
