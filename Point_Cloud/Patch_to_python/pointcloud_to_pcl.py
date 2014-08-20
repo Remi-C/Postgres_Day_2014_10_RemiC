@@ -49,7 +49,7 @@ def perform_1_ransac_segmentation(
     #prepare segmentation
     seg = p.make_segmenter_normals(ksearch=_ksearch)
     seg.set_optimize_coefficients (True);
-    seg.set_model_type (pcl.SACMODEL_NORMAL_PLANE)
+    seg.set_model_type (sac_model)
     seg.set_normal_distance_weight (_distance_weight) #Note : playing with this make the result more (0.5) or less(0.1) selective
     seg.set_method_type (pcl.SAC_RANSAC)
     seg.set_max_iterations (_max_iterations)
