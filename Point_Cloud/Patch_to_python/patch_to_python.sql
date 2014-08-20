@@ -67,7 +67,8 @@ SET search_path TO patch_to_python, benchmark, public;
 
 	  -- TABLE(support_points_indice INT[]  )  --, model float[])
 
-	--a plpython function taking the array of double precision and printing what it understands of it
+	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for a plane inside.
+	--note that we could do the same to detect cylinder
 DROP FUNCTION IF EXISTS rc_py_point_array_to_numpy_array (iar FLOAT[]);
 CREATE FUNCTION rc_py_point_array_to_numpy_array (iar FLOAT[] ) RETURNS TABLE( support_point_index int[] , model FLOAT[])   
 AS $$
@@ -90,24 +91,38 @@ np_array = np.reshape(np.array(iar), (-1, 3)).astype(np.float32)  ; # note : we 
 
 p = pcl.PointCloud() ;
 p.from_array(np_array) ;
+i= 0 ;
+result = list() ; 
+while i <3:  
+	plpy.notice(i) ;
+	#prepare segmentation
+	seg = p.make_segmenter_normals(ksearch=10)
+	seg.set_optimize_coefficients (True);
+	seg.set_model_type (pcl.SACMODEL_NORMAL_PLANE)
+	seg.set_normal_distance_weight (0.1)
+	seg.set_method_type (pcl.SAC_RANSAC)
+	seg.set_max_iterations (100)
+	seg.set_distance_threshold (0.1)
+	#segment
+	indices, model = seg.segment() 
+	result.append(   (indices, model) ) ;
+	#indices, model = seg.segment() 
+	
+	#prepare next iteration
+	i+=1 ;
+	p =  p.extract(indices, negative=True) ; #removing from the cloud the points already used for this plan
 
-seg = p.make_segmenter_normals(ksearch=10)
-seg.set_optimize_coefficients (True);
-seg.set_model_type (pcl.SACMODEL_NORMAL_PLANE)
-seg.set_normal_distance_weight (0.1)
-seg.set_method_type (pcl.SAC_RANSAC)
-seg.set_max_iterations (1000)
-seg.set_distance_threshold (0.05)
-indices, model = seg.segment()
+plpy.notice(result); 
 #print model
-cloud_plane = p.extract(indices, negative=False)
+#remaining_points= p.extract(indices, negative=True)
+
 
 #plpy.notice('indices : ') ;
-#plpy.notice(type(indices)) ;
+#plpy.notice(type(indices[0])) ;
 #plpy.notice('model : ') ;
 #plpy.notice(type(model)) ;
- 
-return [(indices,model)] ; #indices ; --,(model)); 
+return result ; #indices ; --,(model)); 
+#return [(indices,model)] ; 
 $$ LANGUAGE plpythonu;
 	
 	
@@ -115,5 +130,5 @@ $$ LANGUAGE plpythonu;
 	FROM riegl_pcpatch_space as rps,rc_patch_to_XYZ_array(patch) as arr , rc_py_point_array_to_numpy_array(arr) AS result
 	WHERE --gid = 8480 
 		--gid = 18875
-		gid = 1598;
-	
+		--gid = 1598;
+		gid = 1051; -- a patch half hozirontal, half vertical 
