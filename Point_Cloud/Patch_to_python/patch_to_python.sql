@@ -84,64 +84,91 @@ CREATE FUNCTION rc_py_point_array_to_numpy_array (
 	,_distance_weight FLOAT DEFAULT 0.5 --between 0 and 1 . 
 	,_max_iterations INT DEFAULT 100 
 	) 
-RETURNS TABLE( support_point_index int[] , model FLOAT[])   
+RETURNS TABLE( support_point_index int[] , model FLOAT[], model_type TEXT)   
 AS $$
 """
 this function demonstrate how to convert input float[] into a numpy array
 then importing it into a pointcloud (pcl)
 then iteratively finding plan in the cloud using ransac
+	find a plan and points in it. 
+	remove thoses points from the cloud
+	keep their number
+	iterate
+
+	
+	note :about index_array. the problem is each time we perform segmentation we get indices of points in plane. The problem is when the cloud has changed, this indices in the indices  of points in the new cloud and not indices of points in the original cloud. 
+	We use therefore index_array to keep the information of orginal position in original cloud. We change it along to adapt to removal of points.
 """
+#importing neede modules
 import numpy as np ;
 import pcl ; 
+import pointcloud_to_pcl as ptp; #this one is a helper module to lessen duplicates of code
+reload(ptp) ;
 
-#converting the 1D array to 2D array
-np_array = np.reshape(np.array(iar), (-1, 3)).astype(np.float32)  ; # note : we duplicate the data (copy), because we have to assume input data is read only
+#converting the 1D array to pcl pointcloud 
+p = ptp.list_of_point_to_pcl(iar) ;
 
-#importing this numpy array as pointcloud
-p = pcl.PointCloud() ;
-p.from_array(np_array) ;
-i= 0 ;
-result = list() ; 
-stop_condition = False; 
-indices = [0]*(min_support_points+1); 
+#finding the plane 
+result , p_reduced = ptp.perform_N_ransac_segmentation(
+	    p
+	    ,min_support_points
+	    ,max_plane_number
+	    , _ksearch
+	    , pcl.SACMODEL_NORMAL_PLANE
+	    , _distance_weight
+	    , _max_iterations
+	    , _distance_threshold) ;
 
-while ((len(indices) >= min_support_points) & (i<=max_plane_number) & (p.size>=min_support_points)):   
-	#prepare segmentation
-	seg = p.make_segmenter_normals(ksearch=_ksearch)
-	seg.set_optimize_coefficients (True);
-	seg.set_model_type (pcl.SACMODEL_NORMAL_PLANE)
-	seg.set_normal_distance_weight (_distance_weight) #Note : playing with this make the result more (0.5) or less(0.1) selective
-	seg.set_method_type (pcl.SAC_RANSAC)
-	seg.set_max_iterations (_max_iterations)
-	seg.set_distance_threshold (_distance_threshold)
-	#segment
-	indices, model = seg.segment()   
-	#writting result if it it satisfaying
-	if(len(indices) >= min_support_points) :
-		result.append(   (indices, model) ) ;
-	#indices, model = seg.segment() 
-
-	#prepare next iteration
-	i+=1 ;
-	p =  p.extract(indices, negative=True) ; #removing from the cloud the points already used for this plan
+plpy.notice(p_reduced.size) ;
+#finding the cylinder
+cyl_result , p_reduced_2 = ptp.perform_N_ransac_segmentation(
+	    p_reduced
+	    , 5 #min_support_points
+	    , 100 #max_plane_number
+	    , 10 #_ksearch
+	    , pcl.SACMODEL_CYLINDER
+	    , 0.5 #_distance_weight
+	    , 1000 #_max_iterations
+	    , 0.1 # _distance_threshold
+	    ) ;
  
-#print model
-#remaining_points= p.extract(indices, negative=True)
 
+#result.append(  (cyl_result ) );   
 
-#plpy.notice('indices : ') ;
-#plpy.notice(type(indices[0])) ;
-#plpy.notice('model : ') ;
-#plpy.notice(type(model)) ;
-return result ; #indices ; --,(model)); 
-#return [(indices,model)] ; 
-$$ LANGUAGE plpythonu;
+for indices,model, model_type in cyl_result:
+     if model != False:
+	plpy.notice(model) ;
+	result.append(( (indices),model,model_type ) ) ; 
 	
+
+return result ; 
+$$ LANGUAGE plpythonu VOLATILE;
 	
-	SELECT gid, PC_NumPoints(patch) AS npoints, result.*
-	FROM riegl_pcpatch_space as rps,rc_patch_to_XYZ_array(patch) as arr , rc_py_point_array_to_numpy_array(arr,10,100,0.1) AS result
-	WHERE --gid = 8480 
-		--gid = 18875
-		--gid = 1598;
-		--gid = 1051; -- a patch half hozirontal, half vertical . COntain several plans
-		gid = 1740 ; --a patch with a cylinder?
+	--WITH the_results AS (
+		SELECT gid, PC_NumPoints(patch) AS npoints
+			--, result.*
+			, result.support_point_index  as support_point_index
+			,result.model AS model
+			,result.model_type AS moedl_type
+			--,count(*) OVer(PARTITION  BY support_point_index) as duplicate_point
+		FROM riegl_pcpatch_space as rps,rc_patch_to_XYZ_array(patch) as arr 
+			,   rc_py_point_array_to_numpy_array (
+				iar :=arr 
+				,min_support_points:=3
+				,max_plane_number :=100
+				,_distance_threshold:=0.01
+				,_ksearch:=50
+				,_distance_weight:=0.5
+				,_max_iterations:=100
+				) AS result
+		WHERE -- gid = 8480 
+			--gid = 18875 -- very small patch
+			--gid = 1598 
+			--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
+			gid = 1740  --a patch with a cylinder?
+		--ORDER BY support_point_index ASC
+	--)
+	--SELECT *
+	--FROM the_results 
+	--WHERE duplicate_point !=1
+ 
