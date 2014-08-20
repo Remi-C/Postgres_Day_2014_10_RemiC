@@ -46,14 +46,14 @@ SET search_path TO patch_to_python, benchmark, public;
 	DROP FUNCTION IF EXISTS rc_patch_to_XYZ_array(ipatch PCPATCH);
 	CREATE OR REPLACE FUNCTION rc_patch_to_XYZ_array(ipatch PCPATCH
 		)
-	  RETURNS FLOAT[][]AS
+	  RETURNS FLOAT[] AS
 	$BODY$
 			--@brief this function clean result tables
 			-- @return :  nothing 
 			DECLARE 
 			BEGIN
 				
-				RETURN array_agg_custom(ARRAY[ARRAY[ PC_Get(point,'X')::float , PC_Get(point,'Z')::float , PC_Get(point,'Y')::float] ])
+				RETURN array_agg_custom(ARRAY[PC_Get(point,'X')::float , PC_Get(point,'Y')::float , PC_Get(point,'Z')::float])
 				FROM PC_Explode(ipatch) as point ;
 				--RETURN NULL;
 			END ;
@@ -68,11 +68,19 @@ SET search_path TO patch_to_python, benchmark, public;
 
 
 	--a plpython function taking the array of double precision and printing what it understands of it
-CREATE FUNCTION rc_py_point_array_to_numpy_array (iar FLOAT[][])
+DROP FUNCTION IF EXISTS rc_py_point_array_to_numpy_array (iar FLOAT[]);
+CREATE FUNCTION rc_py_point_array_to_numpy_array (iar FLOAT[])
   RETURNS VOID
 AS $$
+ import numpy as np ;
  plpy.notice(iar) ; 
- return null; 
+ plpy.notice(type(iar)) ;
+
+ #converting the 1D array to 2D array
+ np_array = np.reshape(np.array(iar), (-1, 3))  ;
+ plpy.notice(np_array) ; 
+ plpy.notice(type(np_array)) ;
+ return ; 
 $$ LANGUAGE plpythonu;
 	
 	
