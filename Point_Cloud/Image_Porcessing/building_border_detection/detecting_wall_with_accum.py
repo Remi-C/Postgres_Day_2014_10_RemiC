@@ -23,7 +23,7 @@ dest_folder = '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Clo
 #we use gdal to read correctly the multiband tiff
 from osgeo import gdal ;
 gtif = gdal.Open( src_tif ) ;
- 
+import numpy as np
 
 """
 Now, we want to compute the relative height of point regarding the laser origin. So we perform : Z - Z_origin. In band term, it translates to 
@@ -105,6 +105,7 @@ imshow(skeleton, cmap=plt.cm.gray) ; plt.show() ;
 
 from skimage.morphology import disk,square
 from skimage.filter.rank import gradient,threshold ;
+from skimage.filter import sobel;
 from skimage import img_as_float,img_as_uint,img_as_int; 
 from skimage import viewer ;
 from skimage.viewer.plugins import lineprofile ;
@@ -112,10 +113,19 @@ from skimage.viewer.plugins import lineprofile ;
 #filtering the relative height again : we keep only pixel with relativ height between -3 and -2 meters, that is around the height of sidewalk + some margin
 
 filter_relativ_height_sidewalk = relativ_height ;
-filter_relativ_height_sidewalk[(filter_relativ_height_sidewalk<-3)|(filter_relativ_height_sidewalk>-2)| isnan(filter_relativ_height_sidewalk)==True  ] = 0; 
-filter_relativ_height_sidewalk[ filter_relativ_height_sidewalk!=0] = 1
+filter_relativ_height_sidewalk[(filter_relativ_height_sidewalk<-3)|(filter_relativ_height_sidewalk>-2)| isnan(filter_relativ_height_sidewalk)==True  ] = nan; 
+filter_relativ_height_sidewalk[ isnan(filter_relativ_height_sidewalk)==False] = 1
 #filter_relativ_height_sidewalk = (filter_relativ_height_sidewalk +2.5)*2 ;
 
+
+sidewalk_mask = filter_relativ_height_sidewalk ;
+sidewalk_mask[isnan(sidewalk_mask)==True] = 0 ; 
+sidewalk_mask = sidewalk_mask.astype(np.bool)
+ 
+ 
+
+
+ 
  
 filter_relativ_height_sidewalk[(isnan(filter_relativ_height_sidewalk)==False)]
 imshow(filter_relativ_height_sidewalk, cmap=plt.cm.gray) ; plt.show();
@@ -123,18 +133,21 @@ imshow(filter_relativ_height_sidewalk, cmap=plt.cm.gray) ; plt.show();
 Z_around_sidewalk = Z * filter_relativ_height_sidewalk ; 
 imshow(Z_around_sidewalk, cmap=plt.cm.gray) ;
 #Z_around_sidewalk[Z_around_sidewalk!=0]
-new_viewer = viewer.ImageViewer(Z_around_sidewalk) ; new_viewer.show() ; 
-
+#new_viewer = viewer.ImageViewer(Z_around_sidewalk) ; new_viewer.show() ; 
+tmp_min = np.min(Z_around_sidewalk[isnan(Z_around_sidewalk)==False]) ;
+tmp_max = np.max(Z_around_sidewalk[isnan(Z_around_sidewalk)==False]) ;
+Z_around_sidewalk= (Z_around_sidewalk - (tmp_max+tmp_min)/2 ) / (tmp_max-tmp_min)  ;
 
 convert_to_float = img_as_float(filter_relativ_height_sidewalk) 
 convert_to_float[isnan(convert_to_float)==False]
 
-convert_to_int = img_as_int(filter_relativ_height_sidewalk) ; 
+convert_to_int = img_as_int(Z_around_sidewalk) ; 
+viewer.ImageViewer(convert_to_int).show() ; 
 grad =  gradient(convert_to_int,disk(1)) ;
+sobel_result = sobel(convert_to_int,sidewalk_mask) 
+viewer.ImageViewer(sobel_result).show()
 
-
-
-new_viewer = viewer.ImageViewer(grad)
+new_viewer = viewer.ImageViewer(grad) 
 new_viewer += lineprofile.LineProfile()
 new_viewer.show()
 
@@ -151,10 +164,9 @@ from skimage.filter.rank import gradient
 geotransform = gtif.GetGeoTransform()
 
 rasterOrigin = (geotransform[0],geotransform[3])
-pixelWidth = geotransform[1] ; 
-pixelHeight = geotransform[5] ; 
-newRasterfn = dest_folder+'result_straight_skeleton'+strftime("%Y-%m-%d_%H_%M_%S", gmtime()) +'.tif'
-array = skeleton
+pixelWidth = geotransform[1] ;  pixelHeight = geotransform[5] ; 
+newRasterfn = dest_folder+'result_sobel_plus_mask'+strftime("%Y-%m-%d_%H_%M_%S", gmtime()) +'.tif'
+array = sobel_result 
 array2raster(newRasterfn,rasterOrigin,pixelWidth,pixelHeight,array) ;# convert array to raster
 
 #help(gdal.ReprojectImage)
