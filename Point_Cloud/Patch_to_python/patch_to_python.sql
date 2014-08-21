@@ -74,15 +74,22 @@ SET search_path TO patch_to_python, benchmark, public;
  
 	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for a plane inside.
 	--note that we could do the same to detect cylinder
-DROP FUNCTION IF EXISTS rc_py_point_array_to_numpy_array ( FLOAT[],  INT,INT,  FLOAT,INT,FLOAT,INT);
+DROP FUNCTION IF EXISTS rc_py_point_array_to_numpy_array ( FLOAT[],  INT,INT,  FLOAT,INT,FLOAT,INT,  INT,INT,  FLOAT,INT,FLOAT,INT);
 CREATE FUNCTION rc_py_point_array_to_numpy_array (
 	iar FLOAT[] 
-	,min_support_points INT DEFAULT 4
-	,max_plane_number INT DEFAULT 100
-	,_distance_threshold FLOAT DEFAULT 0.1
-	,_ksearch INT DEFAULT 50
-	,_distance_weight FLOAT DEFAULT 0.5 --between 0 and 1 . 
-	,_max_iterations INT DEFAULT 100 
+	,plane_min_support_points INT DEFAULT 4
+	,plane_max_number INT DEFAULT 100
+	,plane_distance_threshold FLOAT DEFAULT 0.1
+	,plane_ksearch INT DEFAULT 50
+	,plane_distance_weight FLOAT DEFAULT 0.5 --between 0 and 1 . 
+	,plane_max_iterations INT DEFAULT 100 
+
+	,cyl_min_support_points INT DEFAULT 7
+	,cyl_max_number INT DEFAULT 100
+	,cyl_distance_threshold FLOAT DEFAULT 0.1
+	,cyl_ksearch INT DEFAULT 10
+	,cyl_distance_weight FLOAT DEFAULT 0.5 --between 0 and 1 . 
+	,cyl_max_iterations INT DEFAULT 100 
 	) 
 RETURNS TABLE( support_point_index int[] , model FLOAT[], model_type TEXT)   
 AS $$
@@ -109,25 +116,25 @@ p = ptp.list_of_point_to_pcl(iar) ;
 #finding the plane 
 result , p_reduced = ptp.perform_N_ransac_segmentation(
 	    p
-	    ,min_support_points
-	    ,max_plane_number
-	    , _ksearch
+	    ,plane_min_support_points
+	    ,plane_max_number
+	    , plane_ksearch
 	    , pcl.SACMODEL_NORMAL_PLANE
-	    , _distance_weight
-	    , _max_iterations
-	    , _distance_threshold) ;
+	    , plane_distance_weight
+	    , plane_max_iterations
+	    , plane_distance_threshold) ;
 
 plpy.notice(p_reduced.size) ;
 #finding the cylinder in the cloud where planes points have been removed
 cyl_result , p_reduced_2 = ptp.perform_N_ransac_segmentation(
 	    p_reduced
-	    , 5 #min_support_points
-	    , 100 #max_plane_number
-	    , 10 #_ksearch
+	    , cyl_min_support_points
+	    , cyl_max_number
+	    , cyl_ksearch
 	    , pcl.SACMODEL_CYLINDER
-	    , 0.5 #_distance_weight
-	    , 1000 #_max_iterations
-	    , 0.1 # _distance_threshold
+	    , cyl_distance_weight
+	    , cyl_max_iterations
+	    , cyl_distance_threshold
 	    ) ; 
 
 #result.append(  (cyl_result ) );   
@@ -149,13 +156,20 @@ $$ LANGUAGE plpythonu VOLATILE;
 			--,count(*) OVer(PARTITION  BY support_point_index) as duplicate_point
 		FROM riegl_pcpatch_space as rps,rc_patch_to_XYZ_array(patch) as arr 
 			,   rc_py_point_array_to_numpy_array (
-				iar :=arr 
-				,min_support_points:=3
-				,max_plane_number :=100
-				,_distance_threshold:=0.01
-				,_ksearch:=50
-				,_distance_weight:=0.5
-				,_max_iterations:=100
+				iar := arr
+				,plane_min_support_points :=10
+				,plane_max_number:=20
+				,plane_distance_threshold:=0.01
+				,plane_ksearch :=50
+				,plane_distance_weight:=0.5 --between 0 and 1 . 
+				,plane_max_iterations:=100 
+
+				,cyl_min_support_points:=20
+				,cyl_max_number:=100
+				,cyl_distance_threshold:=0.05
+				,cyl_ksearch:=10
+				,cyl_distance_weight:=0.5 --between 0 and 1 . 
+				,cyl_max_iterations:=100   
 				) AS result
 		WHERE -- gid = 8480 
 			--gid = 18875 -- very small patch
