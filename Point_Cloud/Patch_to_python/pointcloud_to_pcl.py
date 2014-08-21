@@ -10,20 +10,30 @@ to PCL and to perform some basic stuff
 
 
 def list_of_point_to_pcl(iar):
-    """coinvert list of 3D points to a pcl cloud 
+    """coinvert list of 3D points to a pcl cloud , we center the pointcloud 
+    to reduce precision loss when converting ot float32
 
     :param iar:  -- a list of pcoints coordinate following the pattern X,Y,Z,X,Y,Z ... 
-    :return: a pointcloud object containing all the points
+    :return: a pointcloud object containing all the points, centered at best
     """
     import numpy as np ;
     import pcl ;
+    import plpy ;
+    
     #converting the 1D array to 2D array
-    #np_array = np.reshape(np.array(iar), (-1, 3)).astype(np.float32)  ; # note : we duplicate the data (copy), because we have to assume input data is read only
+    np_array = np.reshape(np.array(iar), (-1, 3)).astype(np.float32)  ; 
+    # note : we duplicate the data (copy), because we have to assume input data is read only
+    
+    #translating the points to be better centered to reduce the risk of precision lost
+    #we find the max in X, Y, Z, and soustract it from all the points
+    np_array-=np.nanmax(np_array, axis=0) ;
+    #plpy.notice(np_array-np.nanmax(np_array, axis=0)) ;
+    
     
     #importing this numpy array as pointcloud
     p = pcl.PointCloud() ;
     p.from_array( 
-        np.reshape(np.array(iar), (-1, 3)).astype(np.float32)
+        np_array
         ) ;
     return p;
     
