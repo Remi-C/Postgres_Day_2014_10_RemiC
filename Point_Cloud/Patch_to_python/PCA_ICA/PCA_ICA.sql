@@ -38,12 +38,13 @@ CREATE FUNCTION rc_py_pca_and_ica (
 	) 
 RETURNS BOOLEAN 
 AS $$
-""" This function perform PCA/ICA and others to demonstrates analysis of structure of a vector of points(3D, but could be 2D)
+""" 
+	This function perform PCA/ICA and others to demonstrates analysis of structure of a vector of points(3D, but could be 2D)
 """
 #importing needed modules
 import plpy ;
-import numpy as np ;  
-from sklearn import decomposition.FastICA;
+import numpy as np ;   
+from sklearn.decomposition import FastICA; 
 
 #converting the 1D array to 2D array (vector of 3D points)
 np_array = np.reshape(np.array(iar), (-1, 3)).astype(np.float32)  ; 
@@ -56,13 +57,11 @@ ica = FastICA(n_components=20
 	, max_iter=200
 	, tol=0.0001  ) ;
 ica.fit(np_array) ;
-plpy.notice(ica.mixing_) ;
-
-
+#plpy.notice(points_fitted) ; 
+#plpy.notice(ica.mixing_) ; 
 return True ; 
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
-/*
-*/
+
 	 -- testing querry  :
 		SELECT gid, PC_NumPoints(patch) AS npoints 
 			
@@ -72,9 +71,9 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 				iar := arr
 				 ) AS result
 		WHERE -- gid = 8480 
-			gid = 18875 -- very small patch
+			--gid = 18875 -- very small patch
 			--gid = 1598 
 			--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
-			--gid = 1740  --a patch with a cylinder? 
+			gid = 1740  --a patch with a cylinder? 
 	 
  
