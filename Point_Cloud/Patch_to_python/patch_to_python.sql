@@ -143,8 +143,7 @@ for indices,model, model_type in cyl_result:
 	result.append(( (indices),model,model_type ) ) ;  
 
 return result ; 
-$$ LANGUAGE plpythonu IMMUTABLE STRICT;
-	
+$$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 	/* testing querry  :
 		SELECT gid, PC_NumPoints(patch) AS npoints
 			--, result.*
@@ -172,17 +171,19 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 		WHERE -- gid = 8480 
 			--gid = 18875 -- very small patch
 			--gid = 1598 
-			--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
-			gid = 1740  --a patch with a cylinder?
+			gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
+			--gid = 1740  --a patch with a cylinder?
 	*/
 
 
 	--a utility function that will take a patch and ouput rows of pointcloud data suitable for exporting :
 
-	DROP FUNCTION IF EXISTS rc_patch_to_plane_and_cylinder_points(ipatch PCPATCH);
-	CREATE OR REPLACE FUNCTION rc_patch_to_plane_and_cylinder_points(ipatch PCPATCH
-		)
-	  RETURNS TABLE (X float,Y float , Z float, index INT, patch_id INT, feature_id int, feature_type int)
+	DROP FUNCTION IF EXISTS rc_patch_to_plane_and_cylinder_points(ipatch PCPATCH, patch_id INT);
+	CREATE OR REPLACE FUNCTION rc_patch_to_plane_and_cylinder_points(ipatch PCPATCH, i_patch_id INT )
+	  RETURNS TABLE (X DOUBLE PRECISION,Y DOUBLE PRECISION , Z DOUBLE PRECISION, index INT
+		, patch_id INT, feature_id int
+		, feature_type int
+		, Nx FLOAT, Ny FLOAT, Nz FLOAT, radius FLOAT)
 	  AS
 	$BODY$
 			--@brief this perform plane and cylinder detection and returns the points being in those planes and cylinders
@@ -190,23 +191,17 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 			DECLARE 
 			BEGIN 
 
-			WITH patch_id AS (
-				SELECT 1740 AS patch_id --a patch with a cylinder?
-					--1051 -- a patch half hozirontal, half vertical . COntain several plans
-			)
-			, points AS (
-				SELECT pt.ordinality, pt.point AS point  
-				FROM patch_id, riegl_pcpatch_space as rps, public.rc_ExplodeN_numbered(rps.patch) as pt
-				WHERE 
-					--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
-					gid = patch_id  --a patch with a cylinder?
+			RETURN QUERY 
+			WITH  points AS (
+				SELECT pt.ordinality::int, pt.point AS point  
+				FROM  public.rc_ExplodeN_numbered(ipatch) as pt 
 			)
 			,points_coordinate_ad_float_arr AS (
 				SELECT array_agg_custom(ARRAY[PC_Get(pt.point,'X')::float , PC_Get(pt.point,'Y')::float , PC_Get(pt.point,'Z')::float] ORDER BY pt.ordinality ASC ) as arr
 				FROM points as pt
 			)
 			,segmented_indices AS (---get the indexes of points resulting from segmentation
-				SELECT  row_number() over() AS feature_id,result.*  
+				SELECT  (row_number() over())::int AS feature_id,result.*  
 				FROM points_coordinate_ad_float_arr as float_arr
 					,   rc_py_plane_and_cylinder_detection (
 						iar := float_arr.arr
@@ -225,21 +220,20 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 						) AS result 
 			)
 			,unnested_indices AS (
-				SELECT feature_id, unnest(support_point_index) AS indices
-				FROM segmented_indices
+				SELECT si.feature_id, unnest(si.support_point_index) AS indices
+				FROM segmented_indices as si
 			)
 			--,segmented_points AS (
-				SELECT PC_Get(pt.point,'X')::float AS X, PC_Get(pt.point,'Y')::float AS Y, PC_Get(pt.point,'Z')::float AS Z
+				SELECT round(PC_Get(pt.point,'X'),3)::double precision AS X, round(PC_Get(pt.point,'Y'),3)::double precision AS Y, round(PC_Get(pt.point,'Z'),3)::double precision AS Z
 					,pt.ordinality AS index
-					,patch_id
+					,round(i_patch_id,0)::int AS patch_id --have to use this trick to allow insert natively in plpgsql
 					,si.feature_id
-					,si.model_type AS feature_type
-					,model_coef
+					,si.model_type AS feature_type 
 					,model_coef[1] AS Nx
 					,model_coef[2] AS Ny
 					,model_coef[3] AS Nz
 					,model_coef[4] as radius
-				FROM patch_id, points as pt
+				FROM  points as pt
 					INNER JOIN unnested_indices AS ui ON (pt.ordinality = ui.indices)
 					INNER JOIN segmented_indices AS si ON (ui.feature_id = si.feature_id)
 					,LATERAL (SELECT CASE WHEN model_type = 11 --plane
@@ -248,14 +242,21 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 						WHEN model_type = 5 --cylinder
 						THEN 
 							ARRAY[model[4],model[5],model[6],model[7]]
-						END AS model_coef)  AS model_coef 
-			)	 
-			
+						END AS model_coef)  AS model_coef  
+				ORDER BY patch_id ASC, feature_id ASC, index ASC; 
 				RETURN; 
 			END ; 
 		$BODY$
 	LANGUAGE plpgsql IMMUTABLE STRICT;
 	--SELECT rc_patch_to_XYZ_array()
+
+	SELECT result.*
+	FROM riegl_pcpatch_space as rps
+		,rc_patch_to_plane_and_cylinder_points(rps.patch, rps.gid) AS result
+	WHERE gid = 1740	;
+
+
+
  
 	--performing planes and cylinders detection on patches and exporting it to file system to be browsed with CloudCompare Software.
 	COPY 
