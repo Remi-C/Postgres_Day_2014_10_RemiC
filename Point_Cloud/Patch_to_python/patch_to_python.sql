@@ -190,39 +190,73 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 			DECLARE 
 			BEGIN 
 
-			WITH segmented_points_indices AS (
-				SELECT gid AS patch_id
-					, result.* 
-				--,count(*) OVer(PARTITION  BY support_point_index) as duplicate_point
-				FROM riegl_pcpatch_space as rps,rc_patch_to_XYZ_array(patch) as arr 
+			WITH patch_id AS (
+				SELECT 1740 AS patch_id --a patch with a cylinder?
+					--1051 -- a patch half hozirontal, half vertical . COntain several plans
+			)
+			, points AS (
+				SELECT pt.ordinality, pt.point AS point  
+				FROM patch_id, riegl_pcpatch_space as rps, public.rc_ExplodeN_numbered(rps.patch) as pt
+				WHERE 
+					--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
+					gid = patch_id  --a patch with a cylinder?
+			)
+			,points_coordinate_ad_float_arr AS (
+				SELECT array_agg_custom(ARRAY[PC_Get(pt.point,'X')::float , PC_Get(pt.point,'Y')::float , PC_Get(pt.point,'Z')::float] ORDER BY pt.ordinality ASC ) as arr
+				FROM points as pt
+			)
+			,segmented_indices AS (---get the indexes of points resulting from segmentation
+				SELECT  row_number() over() AS feature_id,result.*  
+				FROM points_coordinate_ad_float_arr as float_arr
 					,   rc_py_plane_and_cylinder_detection (
-						iar := arr
+						iar := float_arr.arr
 						,plane_min_support_points :=10
 						,plane_max_number:=20
 						,plane_distance_threshold:=0.01
 						,plane_ksearch :=50
 						,plane_distance_weight:=0.5 --between 0 and 1 . 
-						,plane_max_iterations:=100 
-
+						,plane_max_iterations:=100  
 						,cyl_min_support_points:=20
 						,cyl_max_number:=100
 						,cyl_distance_threshold:=0.05
 						,cyl_ksearch:=10
 						,cyl_distance_weight:=0.5 --between 0 and 1 . 
 						,cyl_max_iterations:=100   
-						) AS result
-				WHERE 
-					--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
-					gid = 1740  --a patch with a cylinder?
-				)
+						) AS result 
+			)
+			,unnested_indices AS (
+				SELECT feature_id, unnest(support_point_index) AS indices
+				FROM segmented_indices
+			)
+			--,segmented_points AS (
+				SELECT PC_Get(pt.point,'X')::float AS X, PC_Get(pt.point,'Y')::float AS Y, PC_Get(pt.point,'Z')::float AS Z
+					,pt.ordinality AS index
+					,patch_id
+					,si.feature_id
+					,si.model_type AS feature_type
+					,model_coef
+					,model_coef[1] AS Nx
+					,model_coef[2] AS Ny
+					,model_coef[3] AS Nz
+					,model_coef[4] as radius
+				FROM patch_id, points as pt
+					INNER JOIN unnested_indices AS ui ON (pt.ordinality = ui.indices)
+					INNER JOIN segmented_indices AS si ON (ui.feature_id = si.feature_id)
+					,LATERAL (SELECT CASE WHEN model_type = 11 --plane
+						THEN
+							ARRAY[model[1],model[2],model[3],0.0]
+						WHEN model_type = 5 --cylinder
+						THEN 
+							ARRAY[model[4],model[5],model[6],model[7]]
+						END AS model_coef)  AS model_coef 
+			)	 
 			
 				RETURN; 
 			END ; 
 		$BODY$
 	LANGUAGE plpgsql IMMUTABLE STRICT;
 	--SELECT rc_patch_to_XYZ_array()
-
-
+ 
 	--performing planes and cylinders detection on patches and exporting it to file system to be browsed with CloudCompare Software.
 	COPY 
 		( 
