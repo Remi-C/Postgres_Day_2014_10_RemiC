@@ -72,10 +72,10 @@ SET search_path TO patch_to_python, benchmark, public;
 
 
  
-	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for a plane inside.
+	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for planes inside, then cylinder
 	--note that we could do the same to detect cylinder
-DROP FUNCTION IF EXISTS rc_py_point_array_to_numpy_array ( FLOAT[],  INT,INT,  FLOAT,INT,FLOAT,INT,  INT,INT,  FLOAT,INT,FLOAT,INT);
-CREATE FUNCTION rc_py_point_array_to_numpy_array (
+DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection ( FLOAT[],  INT,INT,  FLOAT,INT,FLOAT,INT,  INT,INT,  FLOAT,INT,FLOAT,INT);
+CREATE FUNCTION rc_py_plane_and_cylinder_detection (
 	iar FLOAT[] 
 	,plane_min_support_points INT DEFAULT 4
 	,plane_max_number INT DEFAULT 100
@@ -124,7 +124,6 @@ result , p_reduced = ptp.perform_N_ransac_segmentation(
 	    , plane_max_iterations
 	    , plane_distance_threshold) ;
 
-plpy.notice(p_reduced.size) ;
 #finding the cylinder in the cloud where planes points have been removed
 cyl_result , p_reduced_2 = ptp.perform_N_ransac_segmentation(
 	    p_reduced
@@ -141,13 +140,12 @@ cyl_result , p_reduced_2 = ptp.perform_N_ransac_segmentation(
 
 for indices,model, model_type in cyl_result:
      if model != False:
-	plpy.notice(model) ;
 	result.append(( (indices),model,model_type ) ) ;  
 
 return result ; 
-$$ LANGUAGE plpythonu VOLATILE;
+$$ LANGUAGE plpythonu IMMUTABLE STRICT;
 	
-	--WITH the_results AS (
+	/* testing querry  :
 		SELECT gid, PC_NumPoints(patch) AS npoints
 			--, result.*
 			, result.support_point_index  as support_point_index
@@ -155,7 +153,7 @@ $$ LANGUAGE plpythonu VOLATILE;
 			,result.model_type AS moedl_type
 			--,count(*) OVer(PARTITION  BY support_point_index) as duplicate_point
 		FROM riegl_pcpatch_space as rps,rc_patch_to_XYZ_array(patch) as arr 
-			,   rc_py_point_array_to_numpy_array (
+			,   rc_py_plane_and_cylinder_detection (
 				iar := arr
 				,plane_min_support_points :=10
 				,plane_max_number:=20
