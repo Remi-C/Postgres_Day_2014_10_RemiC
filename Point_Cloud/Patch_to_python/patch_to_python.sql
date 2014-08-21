@@ -174,8 +174,68 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 			--gid = 1598 
 			--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
 			gid = 1740  --a patch with a cylinder?
-		--ORDER BY support_point_index ASC
-	--)
-	--SELECT *
-	--FROM the_results 
-	--WHERE duplicate_point !=1
+	*/
+
+
+	--a utility function that will take a patch and ouput rows of pointcloud data suitable for exporting :
+
+	DROP FUNCTION IF EXISTS rc_patch_to_plane_and_cylinder_points(ipatch PCPATCH);
+	CREATE OR REPLACE FUNCTION rc_patch_to_plane_and_cylinder_points(ipatch PCPATCH
+		)
+	  RETURNS TABLE (X float,Y float , Z float, index INT, patch_id INT, feature_id int, feature_type int)
+	  AS
+	$BODY$
+			--@brief this perform plane and cylinder detection and returns the points being in those planes and cylinders
+			-- @return :  a table holding the informations needed to identify backward who belongs where
+			DECLARE 
+			BEGIN 
+
+			WITH segmented_points_indices AS (
+				SELECT gid AS patch_id
+					, result.* 
+				--,count(*) OVer(PARTITION  BY support_point_index) as duplicate_point
+				FROM riegl_pcpatch_space as rps,rc_patch_to_XYZ_array(patch) as arr 
+					,   rc_py_plane_and_cylinder_detection (
+						iar := arr
+						,plane_min_support_points :=10
+						,plane_max_number:=20
+						,plane_distance_threshold:=0.01
+						,plane_ksearch :=50
+						,plane_distance_weight:=0.5 --between 0 and 1 . 
+						,plane_max_iterations:=100 
+
+						,cyl_min_support_points:=20
+						,cyl_max_number:=100
+						,cyl_distance_threshold:=0.05
+						,cyl_ksearch:=10
+						,cyl_distance_weight:=0.5 --between 0 and 1 . 
+						,cyl_max_iterations:=100   
+						) AS result
+				WHERE 
+					--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
+					gid = 1740  --a patch with a cylinder?
+				)
+			
+				RETURN; 
+			END ; 
+		$BODY$
+	LANGUAGE plpgsql IMMUTABLE STRICT;
+	--SELECT rc_patch_to_XYZ_array()
+
+
+	--performing planes and cylinders detection on patches and exporting it to file system to be browsed with CloudCompare Software.
+	COPY 
+		( 
+		SELECT ST_X(point) AS X, ST_Y(point) AS Y,ST_Z(point) AS Z, gid
+		FROM (
+			SELECT PC_Explode(patch )::geometry As  point, gid
+			FROM acquisition_tmob_012013.riegl_pcpatch_space 
+			WHERE PC_NumPoints(patch)>85
+				AND gid >= 369310 AND gid < 372838
+				AND points_per_level IS NOT NULL
+			) AS toto
+			--LIMIT 1
+		)
+	TO '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Patch_to_python/data/plane_and_cylinder_detection.csv'-- '/tmp/temp_pointcloud.csv'
+	WITH csv header;
+	
