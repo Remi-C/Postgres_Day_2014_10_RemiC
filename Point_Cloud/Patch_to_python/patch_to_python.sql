@@ -91,7 +91,7 @@ CREATE FUNCTION rc_py_plane_and_cylinder_detection (
 	,cyl_distance_weight FLOAT DEFAULT 0.5 --between 0 and 1 . 
 	,cyl_max_iterations INT DEFAULT 100 
 	) 
-RETURNS TABLE( support_point_index int[] , model FLOAT[], model_type TEXT)   
+RETURNS TABLE( support_point_index int[] , model FLOAT[], model_type INT)   
 AS $$
 """
 this function demonstrate how to convert input float[] into a numpy array
