@@ -94,8 +94,6 @@ then iteratively finding plan in the cloud using ransac
 	remove thoses points from the cloud
 	keep their number
 	iterate
-
-	
 	note :about index_array. the problem is each time we perform segmentation we get indices of points in plane. The problem is when the cloud has changed, this indices in the indices  of points in the new cloud and not indices of points in the original cloud. 
 	We use therefore index_array to keep the information of orginal position in original cloud. We change it along to adapt to removal of points.
 """
@@ -120,7 +118,7 @@ result , p_reduced = ptp.perform_N_ransac_segmentation(
 	    , _distance_threshold) ;
 
 plpy.notice(p_reduced.size) ;
-#finding the cylinder
+#finding the cylinder in the cloud where planes points have been removed
 cyl_result , p_reduced_2 = ptp.perform_N_ransac_segmentation(
 	    p_reduced
 	    , 5 #min_support_points
@@ -130,16 +128,14 @@ cyl_result , p_reduced_2 = ptp.perform_N_ransac_segmentation(
 	    , 0.5 #_distance_weight
 	    , 1000 #_max_iterations
 	    , 0.1 # _distance_threshold
-	    ) ;
- 
+	    ) ; 
 
 #result.append(  (cyl_result ) );   
 
 for indices,model, model_type in cyl_result:
      if model != False:
 	plpy.notice(model) ;
-	result.append(( (indices),model,model_type ) ) ; 
-	
+	result.append(( (indices),model,model_type ) ) ;  
 
 return result ; 
 $$ LANGUAGE plpythonu VOLATILE;
@@ -171,4 +167,3 @@ $$ LANGUAGE plpythonu VOLATILE;
 	--SELECT *
 	--FROM the_results 
 	--WHERE duplicate_point !=1
- 
