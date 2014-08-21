@@ -16,7 +16,7 @@
 --warning : uses PLPYTHON
 -----------------------------------------------------------
 
-
+/*
 
 CREATE SCHEMA IF NOT EXISTS patch_to_python; 
 
@@ -144,40 +144,42 @@ for indices,model, model_type in cyl_result:
 
 return result ; 
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
-	/* testing querry  :
+
+*/
+	 -- testing querry  :
 		SELECT gid, PC_NumPoints(patch) AS npoints
 			--, result.*
-			, result.support_point_index  as support_point_index
-			,result.model AS model
-			,result.model_type AS moedl_type
+			, result.support_point_index 
+			,result.model 
+			,result.model_type 
 			--,count(*) OVer(PARTITION  BY support_point_index) as duplicate_point
 		FROM riegl_pcpatch_space as rps,rc_patch_to_XYZ_array(patch) as arr 
 			,   rc_py_plane_and_cylinder_detection (
 				iar := arr
-				,plane_min_support_points :=10
+				,plane_min_support_points :=100
 				,plane_max_number:=20
-				,plane_distance_threshold:=0.01
+				,plane_distance_threshold:=0.05
 				,plane_ksearch :=50
 				,plane_distance_weight:=0.5 --between 0 and 1 . 
 				,plane_max_iterations:=100 
 
-				,cyl_min_support_points:=20
+				,cyl_min_support_points:=100
 				,cyl_max_number:=100
-				,cyl_distance_threshold:=0.05
-				,cyl_ksearch:=10
-				,cyl_distance_weight:=0.5 --between 0 and 1 . 
-				,cyl_max_iterations:=100   
+				,cyl_distance_threshold:=0.01
+				,cyl_ksearch:=20
+				,cyl_distance_weight:=0 --between 0 and 1 . 
+				,cyl_max_iterations:=1000 
 				) AS result
 		WHERE -- gid = 8480 
 			--gid = 18875 -- very small patch
 			--gid = 1598 
 			gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
 			--gid = 1740  --a patch with a cylinder?
-	*/
+				AND model_type = 5 ;
+	 
 
-
+	/*
 	--a utility function that will take a patch and ouput rows of pointcloud data suitable for exporting :
-
 	DROP FUNCTION IF EXISTS rc_patch_to_plane_and_cylinder_points(ipatch PCPATCH, patch_id INT);
 	CREATE OR REPLACE FUNCTION rc_patch_to_plane_and_cylinder_points(ipatch PCPATCH, i_patch_id INT )
 	  RETURNS TABLE (X DOUBLE PRECISION,Y DOUBLE PRECISION , Z DOUBLE PRECISION, index INT
@@ -205,18 +207,18 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 				FROM points_coordinate_ad_float_arr as float_arr
 					,   rc_py_plane_and_cylinder_detection (
 						iar := float_arr.arr
-						,plane_min_support_points :=10
+						,plane_min_support_points :=100
 						,plane_max_number:=20
-						,plane_distance_threshold:=0.01
-						,plane_ksearch :=50
-						,plane_distance_weight:=0.5 --between 0 and 1 . 
-						,plane_max_iterations:=100  
-						,cyl_min_support_points:=20
-						,cyl_max_number:=100
-						,cyl_distance_threshold:=0.05
-						,cyl_ksearch:=10
+						,plane_distance_threshold:=0.015
+						,plane_ksearch :=25
+						,plane_distance_weight:=0.1 --between 0 and 1 . 
+						,plane_max_iterations:=1000  
+						,cyl_min_support_points:=100
+						,cyl_max_number:=10
+						,cyl_distance_threshold:=0.01
+						,cyl_ksearch:=25
 						,cyl_distance_weight:=0.5 --between 0 and 1 . 
-						,cyl_max_iterations:=100   
+						,cyl_max_iterations:=100  
 						) AS result 
 			)
 			,unnested_indices AS (
@@ -250,27 +252,25 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 	LANGUAGE plpgsql IMMUTABLE STRICT;
 	--SELECT rc_patch_to_XYZ_array()
 
-	SELECT result.*
-	FROM riegl_pcpatch_space as rps
-		,rc_patch_to_plane_and_cylinder_points(rps.patch, rps.gid) AS result
-	WHERE gid = 1740	;
+	 --test exemple
+-- 	SELECT result.*
+-- 	FROM riegl_pcpatch_space as rps
+-- 		,rc_patch_to_plane_and_cylinder_points(rps.patch, rps.gid) AS result
+-- 	WHERE gid = 1051; --1740	;
+	 
 
 
-
- 
+	
 	--performing planes and cylinders detection on patches and exporting it to file system to be browsed with CloudCompare Software.
 	COPY 
 		( 
-		SELECT ST_X(point) AS X, ST_Y(point) AS Y,ST_Z(point) AS Z, gid
-		FROM (
-			SELECT PC_Explode(patch )::geometry As  point, gid
-			FROM acquisition_tmob_012013.riegl_pcpatch_space 
-			WHERE PC_NumPoints(patch)>85
-				AND gid >= 369310 AND gid < 372838
-				AND points_per_level IS NOT NULL
-			) AS toto
-			--LIMIT 1
+		SELECT result.*
+		FROM riegl_pcpatch_space as rps
+			,rc_patch_to_plane_and_cylinder_points(rps.patch, rps.gid) AS result
+		WHERE gid = 1051 -- = 1740	 
 		)
-	TO '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Patch_to_python/data/plane_and_cylinder_detection.csv'-- '/tmp/temp_pointcloud.csv'
+	TO '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Patch_to_python/data/plane_and_cylinder_detection_road_and_wall.csv'-- '/tmp/temp_pointcloud.csv'
 	WITH csv header;
+
 	
+	*/
