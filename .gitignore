@@ -8,6 +8,6 @@
 *.BIN
 *.bin
 *.goutput*
-
+*.csv
 *.qgs~
 *.pyc
