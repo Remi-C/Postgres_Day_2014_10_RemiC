@@ -4,11 +4,6 @@ Postgres_Day_2014_10_RemiC
 usefull instruction and file about the postgres day presentation of pointlcoud use with postgres
 
 
-
-In postgres data server (SGBD), you can create function written in python (using CREATE LANGAGE PLPYTHONU).
-This kind of server can be hacked into a Point Cloud server using PostGis and an extension called pointcloud.
-The work is here and here
-
 In postgres data server (SGBD), you can create function written in python (using CREATE LANGAGE PLPYTHONU).
 This kind of server can be hacked into a Point Cloud server using PostGis and an extension called [pointcloud]( https://github.com/pramsey/pointcloud ).
 The work is [here](https://github.com/Remi-C/Postgres_Day_2014_10_RemiC) and [here](https://github.com/Remi-C/Pointcloud_in_db)
