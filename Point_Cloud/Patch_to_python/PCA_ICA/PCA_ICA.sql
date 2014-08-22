@@ -64,10 +64,6 @@ ica.fit(np_array) ;
 norms =  np.linalg.norm(ica.mixing_,None,1) ;
 normalized_result = ica.mixing_ / norms[:, np.newaxis] ;
 
-#plpy.notice(points_fitted) ; 
-plpy.notice (normalized_result) ; 
-plpy.notice( np.linalg.norm(ica.mixing_,None,1)) ; 
-
 result = list() ; 
 for i in range(0,3):
 	result.append(( norms[i],(normalized_result[i]) ) ) ;  
@@ -82,7 +78,8 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 			,   rc_py_pca_and_ica (
 				iar := arr
 				 ) AS result
-		WHERE  --gid = 8480 
+		WHERE  
+			--gid = 8480 
 			--gid = 18875 -- very small patch
 			--gid = 1598 
 			--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
@@ -117,9 +114,9 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 			)
 			--,generating_the_points AS (
 
-				SELECT round((X_center + structural_vector[1] * generate_series(1,100)* round(ica.norm::numeric,2)/100)::numeric,3)::float AS X  
-					,round((Y_center + structural_vector[2] * generate_series(1,100)* round(ica.norm::numeric,2)/100)::numeric,3)::float AS Y
-					,round((Z_center + structural_vector[3] * generate_series(1,100)* round(ica.norm::numeric,2)/100 )::numeric,3)::float AS Z
+				SELECT round((X_center + structural_vector[1] * generate_series(1,100)* round(ica.norm::numeric,2)/1000)::numeric,3)::float AS X  
+					,round((Y_center + structural_vector[2] * generate_series(1,100)* round(ica.norm::numeric,2)/1000)::numeric,3)::float AS Y
+					,round((Z_center + structural_vector[3] * generate_series(1,100)* round(ica.norm::numeric,2)/1000 )::numeric,3)::float AS Z
 					,ica.patch_id
 					, ica.vector_id
 					,ica.norm
@@ -132,8 +129,24 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 	LANGUAGE plpgsql IMMUTABLE STRICT;
 	--SELECT rc_patch_to_XYZ_array()
 
+	--testing
+-- 	SELECT result.*
+-- 	FROM riegl_pcpatch_space as rps
+-- 		,rc_patch_to_structural_vector_points(rps.patch, rps.gid) AS result
+-- 	WHERE gid = 1051; --1740	;
 
-	SELECT result.*
+
+	COPY 
+		( 
+			SELECT result.*
 	FROM riegl_pcpatch_space as rps
 		,rc_patch_to_structural_vector_points(rps.patch, rps.gid) AS result
-	WHERE gid = 1051; --1740	;
+	WHERE 
+		--gid = 8480 
+		--gid = 18875 -- very small patch
+		--gid = 1598 
+		gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
+		--gid = 1740   --a patch with a cylinder?  
+		)
+	TO '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Patch_to_python/data/structural_vector_sidewalk_wall.csv'-- '/tmp/temp_pointcloud.csv'
+	WITH csv header;
