@@ -81,6 +81,7 @@ CREATE FUNCTION rc_py_plane_and_cylinder_detection (
 	,plane_max_number INT DEFAULT 100
 	,plane_distance_threshold FLOAT DEFAULT 0.1
 	,plane_ksearch INT DEFAULT 50
+	,plane_search_radius FLOAT DEFAULT 0.1
 	,plane_distance_weight FLOAT DEFAULT 0.5 --between 0 and 1 . 
 	,plane_max_iterations INT DEFAULT 100 
 
@@ -88,6 +89,7 @@ CREATE FUNCTION rc_py_plane_and_cylinder_detection (
 	,cyl_max_number INT DEFAULT 100
 	,cyl_distance_threshold FLOAT DEFAULT 0.1
 	,cyl_ksearch INT DEFAULT 10
+	,plane_search_radius FLOAT DEFAULT 0.1
 	,cyl_distance_weight FLOAT DEFAULT 0.5 --between 0 and 1 . 
 	,cyl_max_iterations INT DEFAULT 100 
 	) 
@@ -119,6 +121,7 @@ result , p_reduced = ptp.perform_N_ransac_segmentation(
 	    ,plane_min_support_points
 	    ,plane_max_number
 	    , plane_ksearch
+	    , plane_search_radius
 	    , pcl.SACMODEL_NORMAL_PLANE
 	    , plane_distance_weight
 	    , plane_max_iterations
@@ -130,6 +133,7 @@ cyl_result , p_reduced_2 = ptp.perform_N_ransac_segmentation(
 	    , cyl_min_support_points
 	    , cyl_max_number
 	    , cyl_ksearch
+	    , cyl_search_radius
 	    , pcl.SACMODEL_CYLINDER
 	    , cyl_distance_weight
 	    , cyl_max_iterations
@@ -159,14 +163,16 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 				,plane_min_support_points :=100
 				,plane_max_number:=20
 				,plane_distance_threshold:=0.05
-				,plane_ksearch :=50
+				,plane_ksearch :=-1#can be -1 to not be limited
+				,plane_search_radius := 0.1
 				,plane_distance_weight:=0.5 --between 0 and 1 . 
 				,plane_max_iterations:=100 
 
 				,cyl_min_support_points:=100
 				,cyl_max_number:=100
 				,cyl_distance_threshold:=0.01
-				,cyl_ksearch:=20
+				,cyl_ksearch:=-1#can be -1 to not be limited
+				,cyl_search_radius:= 0.1
 				,cyl_distance_weight:=0 --between 0 and 1 . 
 				,cyl_max_iterations:=1000 
 				) AS result

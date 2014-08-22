@@ -40,6 +40,7 @@ def list_of_point_to_pcl(iar):
 def perform_1_ransac_segmentation(
     p
     , _ksearch
+    , _search_radius
     , sac_model
     , _distance_weight
     , _max_iterations
@@ -57,7 +58,7 @@ def perform_1_ransac_segmentation(
     import numpy as np ;
     import pcl ;
     #prepare segmentation
-    seg = p.make_segmenter_normals(ksearch=_ksearch)
+    seg = p.make_segmenter_normals(ksearch=_ksearch, searchRadius = _search_radius)
     seg.set_optimize_coefficients (True);
     seg.set_model_type (sac_model)
     seg.set_normal_distance_weight (_distance_weight) #Note : playing with this make the result more (0.5) or less(0.1) selective
@@ -75,6 +76,7 @@ def perform_N_ransac_segmentation(
     ,min_support_points
     ,max_plane_number
     , _ksearch
+    ,_search_radius
     , sac_model
     , _distance_weight
     , _max_iterations
@@ -103,7 +105,7 @@ def perform_N_ransac_segmentation(
     
     #looking for feature recursively
     while ((len(indices) >= min_support_points) & (i<=max_plane_number) & (p.size>=min_support_points)):   
-        indices, model = perform_1_ransac_segmentation( p , _ksearch
+        indices, model = perform_1_ransac_segmentation( p , _ksearch , _search_radius
             , sac_model
             , _distance_weight , _max_iterations , _distance_threshold) ; 
     
