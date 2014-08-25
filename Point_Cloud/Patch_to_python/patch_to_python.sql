@@ -111,6 +111,7 @@ import numpy as np ;
 import pcl ; 
 import pointcloud_to_pcl as ptp; #this one is a helper module to lessen duplicates of code
 reload(pcl) ;
+reload(ptp) ;
 
 #converting the 1D array to pcl pointcloud 
 p = ptp.list_of_point_to_pcl(iar) ;
