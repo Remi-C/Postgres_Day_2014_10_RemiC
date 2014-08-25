@@ -16,7 +16,7 @@
 --warning : uses PLPYTHON
 -----------------------------------------------------------
 
-/*
+
 
 CREATE SCHEMA IF NOT EXISTS patch_to_python; 
 
@@ -74,7 +74,7 @@ SET search_path TO patch_to_python, benchmark, public;
  
 	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for planes inside, then cylinder
 	--note that we could do the same to detect cylinder
-DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection ( FLOAT[],  INT,INT,  FLOAT,INT,FLOAT,INT,  INT,INT,  FLOAT,INT,FLOAT,INT);
+DROP FUNCTION IF EXISTS rc_py_plane_and_cylinder_detection ( FLOAT[],  INT,INT,  FLOAT,INT,FLOAT,FLOAT,INT,  INT,INT,  FLOAT,INT,FLOAT,FLOAT,INT);
 CREATE FUNCTION rc_py_plane_and_cylinder_detection (
 	iar FLOAT[] 
 	,plane_min_support_points INT DEFAULT 4
@@ -89,7 +89,7 @@ CREATE FUNCTION rc_py_plane_and_cylinder_detection (
 	,cyl_max_number INT DEFAULT 100
 	,cyl_distance_threshold FLOAT DEFAULT 0.1
 	,cyl_ksearch INT DEFAULT 10
-	,plane_search_radius FLOAT DEFAULT 0.1
+	,cyl_search_radius FLOAT DEFAULT 0.1
 	,cyl_distance_weight FLOAT DEFAULT 0.5 --between 0 and 1 . 
 	,cyl_max_iterations INT DEFAULT 100 
 	) 
@@ -110,7 +110,7 @@ then iteratively finding plan in the cloud using ransac
 import numpy as np ;
 import pcl ; 
 import pointcloud_to_pcl as ptp; #this one is a helper module to lessen duplicates of code
-reload(ptp) ;
+reload(pcl) ;
 
 #converting the 1D array to pcl pointcloud 
 p = ptp.list_of_point_to_pcl(iar) ;
@@ -149,7 +149,7 @@ for indices,model, model_type in cyl_result:
 return result ; 
 $$ LANGUAGE plpythonu IMMUTABLE STRICT; 
 
-*/
+
 	 -- testing querry  :
 		SELECT gid, PC_NumPoints(patch) AS npoints
 			--, result.*
@@ -163,7 +163,7 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 				,plane_min_support_points :=100
 				,plane_max_number:=20
 				,plane_distance_threshold:=0.05
-				,plane_ksearch :=-1#can be -1 to not be limited
+				,plane_ksearch :=-1 --can be -1 to not be limited
 				,plane_search_radius := 0.1
 				,plane_distance_weight:=0.5 --between 0 and 1 . 
 				,plane_max_iterations:=100 
@@ -171,7 +171,7 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 				,cyl_min_support_points:=100
 				,cyl_max_number:=100
 				,cyl_distance_threshold:=0.01
-				,cyl_ksearch:=-1#can be -1 to not be limited
+				,cyl_ksearch:=-1 --can be -1 to not be limited
 				,cyl_search_radius:= 0.1
 				,cyl_distance_weight:=0 --between 0 and 1 . 
 				,cyl_max_iterations:=1000 
@@ -179,9 +179,9 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 		WHERE -- gid = 8480 
 			--gid = 18875 -- very small patch
 			--gid = 1598 
-			gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
-			--gid = 1740  --a patch with a cylinder?
-				AND model_type = 5 ;
+			--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
+			gid = 1740  --a patch with a cylinder?
+				--AND model_type = 5 ;
 	 
 
 	/*
@@ -216,13 +216,15 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 						,plane_min_support_points :=100
 						,plane_max_number:=20
 						,plane_distance_threshold:=0.015
-						,plane_ksearch :=25
+						,plane_ksearch :=-1
+						,plane_search_radius := 0.08
 						,plane_distance_weight:=0.1 --between 0 and 1 . 
-						,plane_max_iterations:=1000  
+						,plane_max_iterations:=100  
 						,cyl_min_support_points:=100
 						,cyl_max_number:=10
 						,cyl_distance_threshold:=0.01
-						,cyl_ksearch:=25
+						,cyl_ksearch:=-1
+						,cyl_search_radius := 0.1
 						,cyl_distance_weight:=0.5 --between 0 and 1 . 
 						,cyl_max_iterations:=100  
 						) AS result 
@@ -273,9 +275,10 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 		SELECT result.*
 		FROM riegl_pcpatch_space as rps
 			,rc_patch_to_plane_and_cylinder_points(rps.patch, rps.gid) AS result
-		WHERE gid = 1051 -- = 1740	 
+		WHERE gid = --1051 -- 
+				1740	 
 		)
-	TO '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Patch_to_python/data/plane_and_cylinder_detection_road_and_wall.csv'-- '/tmp/temp_pointcloud.csv'
+	TO '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Patch_to_python/data/plane_and_cylinder_detection_road_sidewalk_pole_search_radius.csv'
 	WITH csv header;
 
 	
