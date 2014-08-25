@@ -22,7 +22,6 @@ SET search_path TO patch_to_python, benchmark, public;
 	--we work on patch 8480 for example, with 2269 points 
  
  
-
  
 	--a plpython function taking the array of double precision and converting it to pointcloud, then looking for planes inside, then cylinder
 	--note that we could do the same to detect cylinder
@@ -44,16 +43,36 @@ then we perform DBSCAN on it.
 #importing neede modules
 import plpy;
 import numpy as np ;
+import pcl;
 from sklearn.cluster import DBSCAN ; 
+reload(pcl);
 
 
 #converting from 1D list to 2D numpy array (array of 4D points)
 np_array = np.reshape(np.array(iar), (-1, data_dim)); 
 np_array-=np.nanmax(np_array, axis=0) ; 
 
+#creating a point cloud to compute normals
+#reshaping the numpy array to keep only X, Y , Z
+geom_array  = np_array[:,0:3 ].astype(np.float32) ;
+	#plpy.notice(geom_array) ;
+#creating a point cloud with this array of points
+p = pcl.PointCloud() ;
+p.from_array( geom_array) ;
+#computing the normal of the point clouds :  
+normals = p.calc_normals(-1,0.1);
+	#plpy.notice(normals) ; 
+#project normals on Z vector with a scalar product : this give a score between 0 and 1 of how much the normal is vertical
+verticality = 1-abs(np.dot(normals,[0,0,1])); 
+	#plpy.notice(normals); 
 
+	#plpy.notice(geom_array.shape);
+	#plpy.notice((normals).shape);
+#adding the verticality score to input array :
+geom_array = np.concatenate((geom_array, verticality[:,np.newaxis]), axis=1); 
+	#plpy.notice(geom_array); 
 #performing clustering 
-db = DBSCAN(eps, min_samples).fit(np_array) ;
+db = DBSCAN(eps, min_samples).fit(geom_array) ;
 core_samples_mask = np.zeros_like(db.labels_, dtype=bool) ;
 core_samples_mask[db.core_sample_indices_] = True ;
 labels = db.labels_ ;
@@ -101,7 +120,7 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 -- 		SELECT DISTINCT *
 -- 		FROM unnested_indices;
 
- 
+	/*
 		--a utility function that will take a patch and ouput rows of pointcloud data suitable for exporting :
 	DROP FUNCTION IF EXISTS rc_patch_DBScan_clustering_points(ipatch PCPATCH, patch_id INT, FLOAT,INT );
 	CREATE OR REPLACE FUNCTION rc_patch_DBScan_clustering_points(ipatch PCPATCH, i_patch_id INT,_eps FLOAT DEFAULT 0.1, _min_samples INT  DEFAULT 10)
@@ -127,7 +146,7 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 							PC_Get(pt.point,'X')::DOUBLE PRECISION
 							, PC_Get(pt.point,'Y')::DOUBLE PRECISION
 							, PC_Get(pt.point,'Z')::DOUBLE PRECISION
-							, PC_Get(pt.point,'reflectance')::float/50.0
+							, PC_Get(pt.point,'reflectance')::float/10.0
 						] ORDER BY pt.ordinality ASC ) as arr
 				FROM points as pt
 			)
@@ -173,22 +192,29 @@ $$ LANGUAGE plpythonu IMMUTABLE STRICT;
 	SELECT result.*
 	FROM riegl_pcpatch_space as rps
 		,rc_patch_DBScan_clustering_points(rps.patch, rps.gid,_eps:=0.1::float,_min_samples:=50) AS result
-	WHERE gid = 1051; --1740	;
-
-
-	
+	WHERE 
+		gid = 1051; --1740	;
+		--gid = 18875;
+	*/
+	/*
 	COPY 
 		( 
-		SELECT result.*
-		FROM riegl_pcpatch_space as rps
-			,rc_patch_DBScan_clustering_points(rps.patch, rps.gid,_eps:=0.1::float,_min_samples:=50) AS result
-		WHERE 
+
+		WITH patch AS (
+			SELECT min(gid) AS gid ,pc_union(patch) AS patch
+			FROM riegl_pcpatch_space as rps
+			WHERE ST_DWithin(patch::geometry, ST_MakePoint(1903,21224), 3)=TRUE
+		)
+		SELECT result.* -- , s_pid * result.cluster_id AS ccid
+		FROM patch AS rps
+			,rc_patch_DBScan_clustering_points(rps.patch, rps.gid,_eps:=0.15::float,_min_samples:=50) AS result
+		WHERE ST_DWithin(patch::geometry, ST_MakePoint(1903,21224), 3)=TRUE
 			--gid = 8480 
 			--gid = 18875 -- very small patch
 			--gid = 1598 
-			gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
+			--gid = 1051 -- a patch half hozirontal, half vertical . COntain several plans
 			--gid = 1740   --a patch with a cylinder?  
 		)
-	TO '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Patch_to_python/data/dbscan_clustering_sidewalk_wall.csv'-- '/tmp/temp_pointcloud.csv'
+	TO '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Patch_to_python/data/dbscan_clustering_small_area2.csv'-- '/tmp/temp_pointcloud.csv'
 	WITH csv header;
-	 
+	*/
