@@ -21,12 +21,13 @@ def list_of_point_to_pcl(iar):
     import plpy ;
     
     #converting the 1D array to 2D array
-    np_array = np.reshape(np.array(iar), (-1, 3)).astype(np.float32)  ; 
+    np_array = np.reshape(np.array(iar), (-1, 3))  ; 
     # note : we duplicate the data (copy), because we have to assume input data is read only
     
     #translating the points to be better centered to reduce the risk of precision lost
     #we find the max in X, Y, Z, and soustract it from all the points
     np_array-=np.nanmax(np_array, axis=0) ;
+    np_array = np_array.astype(np.float32) ;
     #plpy.notice(np_array-np.nanmax(np_array, axis=0)) ;
     
     
@@ -55,10 +56,16 @@ def perform_1_ransac_segmentation(
     :return indices: the indices of the point in p that belongs to the feature
     :return model: the model of the feature
     """
+    import plpy;
     import numpy as np ;
     import pcl ;
+    reload(pcl) ;
     #prepare segmentation
-    seg = p.make_segmenter_normals(ksearch=_ksearch, searchRadius = _search_radius)
+    seg = p.make_segmenter_normals(ksearch=_ksearch, searchRadius = _search_radius) ; 
+    
+    toto = p.calc_normals(10,10) ;
+    plpy.notice(toto);
+    
     seg.set_optimize_coefficients (True);
     seg.set_model_type (sac_model)
     seg.set_normal_distance_weight (_distance_weight) #Note : playing with this make the result more (0.5) or less(0.1) selective
