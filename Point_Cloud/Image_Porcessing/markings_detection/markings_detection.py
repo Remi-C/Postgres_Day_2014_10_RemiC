@@ -19,6 +19,7 @@ from skimage.restoration import denoise_bilateral
 from skimage.morphology import skeletonize ;
 from skimage.morphology import erosion, dilation, opening, closing, white_tophat , binary_closing;
 from skimage.morphology import disk
+from skimage.transform import hough_line, hough_line_peaks,  probabilistic_hough_line
 
 
 #data I/O
@@ -106,3 +107,18 @@ sobel_result = sobel(den,height_nan_mask) ;
 
 
 ####line detection###
+
+lines = probabilistic_hough_line(sobel_result, threshold=10, line_length=5, line_gap=20)
+
+
+for line in lines:
+    p0, p1 = line ;
+    plt.plot((p0[0], p1[0]), (p0[1], p1[1])) ;
+
+imshow(skeleton, cmap=plt.cm.gray) ; plt.show() ;
+
+
+
+
+
+
