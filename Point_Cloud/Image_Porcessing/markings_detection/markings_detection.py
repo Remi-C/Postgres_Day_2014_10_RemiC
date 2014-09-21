@@ -8,6 +8,7 @@ Created on Sun Sep 21 10:49:48 2014
 #imports
 import numpy as np;
 from osgeo import gdal ;
+from scipy.fftpack import fft2;
 from skimage.morphology import disk,square
 from skimage.filter.rank import gradient,threshold ;
 from skimage.filter import sobel;
@@ -20,7 +21,9 @@ from skimage.morphology import skeletonize ;
 from skimage.morphology import erosion, dilation, opening, closing, white_tophat , binary_closing;
 from skimage.morphology import disk
 from skimage.transform import hough_line, hough_line_peaks,  probabilistic_hough_line
+from sklearn.preprocessing import normalize  ;
 
+from skimage.filter import gaussian_filter
 
 #data I/O
 src_tif = '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Data/rasterized_pointcloud_min_height/raster_1_all_attributes_min.tif'
@@ -123,6 +126,44 @@ for line in lines:
 imshow(sobel_thres, cmap=plt.cm.gray) ; plt.show() ;
 
 
+###line clustering###
+"""We need to merge the lines to find the finale ones.
+Fro this we want to compute angle of the lines (compared ot origin axisfor instance)
+, then cluster on middle points coordinate + angle 
+We need to perform some operation on angle so that some known angles comes together ()
+(for instance, parallel and orthogonale lines, 30 degrées lines, 60 degrées lines ...)
+"""
+
+
+from numpy.fft import fftshift
+fft = fftshift(fft2((sobel_thres - np.mean(sobel_thres))))
+pow = log(real(multiply(fft, fft.conjugate())))
+imshow(pow , cmap=plt.cm.gray) ; plt.show() ;
+
+
+viewer.ImageViewer(pow/10.0 ).show() ;
+
+fft_of_fft =  normalize(pow, norm='l2', axis=1, copy=True);
+fft_of_fft_2 = gaussian_filter(fft_of_fft, 5)
+imshow(fft_of_fft_2, cmap=plt.cm.gray) ; plt.show() ;
+
+lines_fft = probabilistic_hough_line(fft_of_fft_2, threshold=10, line_length=100, line_gap=30) ;
+len(lines_fft) ;
+
+lines_fft
+
+fft_of_fft[fft_of_fft<0.5]=0; 
+imshow(fft_of_fft, cmap=plt.cm.gray) ; plt.show() ;
+
+ sklearn.preprocessing.normalize(pow, norm='l2', axis=1, copy=True)¶
+
+fft_2 = fftshift(fft2(  fft_of_fft  ))
+pow_2 = log(real(multiply(fft_2, fft_2.conjugate()))) 
+imshow(pow_2, cmap=plt.cm.gray) ; plt.show() ;
+  
+image_fft = fft2(refl)
+
+imshow(image_fft, cmap=plt.cm.gray) ; plt.show() ;
 
 
 
