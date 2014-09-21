@@ -25,6 +25,9 @@ from sklearn.preprocessing import normalize  ;
 
 from skimage.filter import gaussian_filter
 
+from sklearn.cluster import DBSCAN
+from sklearn import metrics
+
 #data I/O
 src_tif = '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Data/rasterized_pointcloud_min_height/raster_1_all_attributes_min.tif'
 dest_folder = '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Image_Porcessing/markings_detection/' ; 
@@ -128,42 +131,103 @@ imshow(sobel_thres, cmap=plt.cm.gray) ; plt.show() ;
 
 ###line clustering###
 """We need to merge the lines to find the finale ones.
-Fro this we want to compute angle of the lines (compared ot origin axisfor instance)
+Fro this we want to compute angle of the liresult_clustering = DBSCAN(eps=10, min_samples=5, metric='euclidean', algorithm='auto', leaf_size=30, p=None, random_state=None).fit(line_array)nes (compared ot origin axisfor instance)
 , then cluster on middle points coordinate + angle 
 We need to perform some operation on angle so that some known angles comes together ()
 (for instance, parallel and orthogonale lines, 30 degrées lines, 60 degrées lines ...)
 """
 
 
-from numpy.fft import fftshift
-fft = fftshift(fft2((sobel_thres - np.mean(sobel_thres))))
-pow = log(real(multiply(fft, fft.conjugate())))
-imshow(pow , cmap=plt.cm.gray) ; plt.show() ;
+#compute angle 
+line_array = None
+line_array = [] # np.empty( (0,3), dtype=float ) 
+#what a shame to use a loop for this !
+for line in lines: 
+    p0, p1 = line ;
+    x_center = (p0[0]+p1[0])/2.0 ;
+    y_center = (p0[1]+p1[1])/2.0 ;
+    vect = np.asarray(p1)-np.asarray(p0) ;
+    n_vect = vect/ np.linalg.norm(vect)
+    dot_prod = np.dot(n_vect, np.asarray((0,1)) ) ;
+    theta  = math.acos(dot_prod) ; 
+    quotient, remainder_45 =  divmod(theta+math.pi*2 ,math.pi) 
+    #quotient, remainder_30 =  divmod(theta ,math.pi/6.0) 
+    line_array.append(  (x_center,y_center, 80*remainder_45 ) )
 
-
-viewer.ImageViewer(pow/10.0 ).show() ;
-
-fft_of_fft =  normalize(pow, norm='l2', axis=1, copy=True);
-fft_of_fft_2 = gaussian_filter(fft_of_fft, 5)
-imshow(fft_of_fft_2, cmap=plt.cm.gray) ; plt.show() ;
-
-lines_fft = probabilistic_hough_line(fft_of_fft_2, threshold=10, line_length=100, line_gap=30) ;
-len(lines_fft) ;
-
-lines_fft
-
-fft_of_fft[fft_of_fft<0.5]=0; 
-imshow(fft_of_fft, cmap=plt.cm.gray) ; plt.show() ;
-
- sklearn.preprocessing.normalize(pow, norm='l2', axis=1, copy=True)¶
-
-fft_2 = fftshift(fft2(  fft_of_fft  ))
-pow_2 = log(real(multiply(fft_2, fft_2.conjugate()))) 
-imshow(pow_2, cmap=plt.cm.gray) ; plt.show() ;
+feature_array = None
+feature_array = np.reshape(np.array(line_array), (-1, 3))  ; 
   
-image_fft = fft2(refl)
+#clustering using DBSCAN algorithm
 
-imshow(image_fft, cmap=plt.cm.gray) ; plt.show() ;
+db = DBSCAN(eps=40, min_samples=5, metric='euclidean', algorithm='auto', leaf_size=30, p=None, random_state=None).fit(feature_array)
+
+core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+core_samples_mask[db.core_sample_indices_] = True
+labels = db.labels_
+n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+print('Estimated number of clusters: %d' % n_clusters_)  
+
+
+unique_labels = set(labels)
+colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
+for k, col in zip(unique_labels, colors):
+    if k == -1:
+        # Black used for noise.
+        col = 'k'
+
+    class_member_mask = (labels == k)
+
+    xy = feature_array[class_member_mask & core_samples_mask]
+    plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
+             markeredgecolor='k', markersize=14)
+
+    xy = feature_array[class_member_mask & ~core_samples_mask]
+    plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
+             markeredgecolor='k', markersize=6)
+
+plt.title('Estimated number of clusters: %d' % n_clusters_)
+imshow(sobel_thres, cmap=plt.cm.gray) ; 
+plt.show()
+
+
+
+
+
+#==============================================================================
+# 
+# from numpy.fft import fftshift
+# fft = fftshift(fft2((sobel_thres - np.mean(sobel_thres))))
+# pow = log(real(multiply(fft, fft.conjugate())))
+# #imshow(pow , cmap=plt.cm.gray) ; plt.show() ;
+# 
+# 
+# #viewer.ImageViewer(fft_of_fft).show() ;
+# 
+# fft_of_fft =  normalize(pow, norm='l2', axis=1, copy=True);
+# fft_of_fft_2 = gaussian_filter(fft_of_fft, 5)
+# imshow(fft_of_fft_2, cmap=plt.cm.gray) ; plt.show() ;
+# 
+# viewer.ImageViewer(fft_of_fft_2 ).show() ;
+# 
+# lines_fft = probabilistic_hough_line(fft_of_fft_2, threshold=1000, line_length=300, line_gap=30) ;
+# len(lines_fft) ;
+# 
+# lines_fft
+# 
+# fft_of_fft[fft_of_fft<0.2]=0; 
+# imshow(fft_of_fft, cmap=plt.cm.gray) ; plt.show() ;
+# 
+#  sklearn.preprocessing.normalize(pow, norm='l2', axis=1, copy=True)¶
+# 
+# fft_2 = fftshift(fft2(  fft_of_fft  ))
+# pow_2 = log(real(multiply(fft_2, fft_2.conjugate()))) 
+# imshow(pow_2, cmap=plt.cm.gray) ; plt.show() ;
+#   
+# image_fft = fft2(refl)
+#
+#imshow(image_fft, cmap=plt.cm.gray) ; plt.show() ;
+#==============================================================================
+
 
 
 
