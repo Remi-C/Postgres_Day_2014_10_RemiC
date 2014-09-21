@@ -28,8 +28,16 @@ import numpy as np
 """
 Now, we want to compute the relative height of point regarding the laser origin. So we perform : Z - Z_origin. In band term, it translates to 
     Band 1 =  Z 
-    Band 6 = Z_origin
     Band 2 = numbe rof points in this pixel (accumulated)
+    Band 3 = GPS_Time
+    Band 4 = x_origin
+    Band 5 = y_origin
+    Band 6 = Z_origin
+    Band 7 = reflectance
+    Band 8 = range
+    Band 9 = theta
+    Band 10 = id
+    Band 11 = class
 """
 
 #getting all data into numpy array
