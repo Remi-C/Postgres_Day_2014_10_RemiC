@@ -24,10 +24,6 @@ from skimage.morphology import disk
 #data I/O
 src_tif = '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Data/rasterized_pointcloud_min_height/raster_1_all_attributes_min.tif'
 dest_folder = '/media/sf_E_RemiCura/PROJETS/Postgres_Day_2014_10_RemiC/Point_Cloud/Image_Porcessing/markings_detection/' ; 
-
-
-gtif = gdal.Open( src_tif ) ;
-
 """
 Loading the reflectance band : number 7
     Band 1 =  Z 
@@ -42,8 +38,12 @@ Loading the reflectance band : number 7
     Band 10 = id
     Band 11 = class
 """
-refl  = np.array(gtif.GetRasterBand(7).ReadAsArray()) ;
 
+
+####loading data###
+
+gtif = gdal.Open( src_tif ) ;
+refl  = np.array(gtif.GetRasterBand(7).ReadAsArray()) ;
 
 """
 imshow(refl, cmap=plt.cm.gray) ; 
@@ -57,6 +57,9 @@ tmp_min = np.min(refl[isnan(refl)==False]) ;
 tmp_max = np.max(refl[isnan(refl)==False]) ;
 refl_n= (refl -  tmp_min ) / (tmp_max-tmp_min)  ;
 """normalized between 0 and 1"""
+  
+  
+####creating a mask for Nan and strong gradient on Z (we want flat places)###
   
 #creating a mask around nan values to be able to remove it from computing
 nan_mask = refl ;
@@ -79,12 +82,13 @@ height_nan_mask = height_nan_mask.astype(np.bool)
 height_nan_mask = erosion(height_nan_mask, disk(5))
 #viewer.ImageViewer(height_nan_mask).show() ; 
   
+
+###smoothing of image, using a bilateral filter###
+
 refl_n_f = img_as_float(refl_n,True) ;  
 refl_n_f[isnan(refl_n_f)==True] = 0 ; """We have to cast nan to 0, the denoising doesn't understand Nan"""
-
 #imshow(refl_n_f, cmap=plt.cm.gray) ; 
 #plt.show() ;
-
 den = denoise_bilateral(refl_n_f, sigma_range=0.085, sigma_spatial=3) ;
 
 np.histogram(den)
@@ -93,6 +97,12 @@ den[isnan(den)==True]
 #plt.show() ;
 #viewer.ImageViewer(den) ;
   
+  
+###gradient of smoothed image###  
 sobel_result = sobel(den,height_nan_mask) ; 
 #imshow(sobel_result, cmap=plt.cm.gray,interpolation="none") ; 
-viewer.ImageViewer(sobel_result).show() ; 
+#viewer.ImageViewer(sobel_result).show() ; 
+
+
+
+####line detection###
