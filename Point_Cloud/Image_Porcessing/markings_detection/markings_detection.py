@@ -104,18 +104,23 @@ sobel_result = sobel(den,height_nan_mask) ;
 #imshow(sobel_result, cmap=plt.cm.gray,interpolation="none") ; 
 #viewer.ImageViewer(sobel_result).show() ; 
 
+#threshold :
+sobel_thres = sobel_result ;
+sobel_thres[sobel_thres<0.05] = 0 ;
+imshow( sobel_thres, cmap=plt.cm.gray,interpolation="none") ; 
+
 
 
 ####line detection###
 
-lines = probabilistic_hough_line(sobel_result, threshold=10, line_length=5, line_gap=20)
-
+lines = probabilistic_hough_line(sobel_thres, threshold=10, line_length=6, line_gap=3)
+len(lines)
 
 for line in lines:
     p0, p1 = line ;
     plt.plot((p0[0], p1[0]), (p0[1], p1[1])) ;
 
-imshow(skeleton, cmap=plt.cm.gray) ; plt.show() ;
+imshow(sobel_thres, cmap=plt.cm.gray) ; plt.show() ;
 
 
 
