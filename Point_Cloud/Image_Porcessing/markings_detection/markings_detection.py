@@ -144,22 +144,21 @@ line_array = [] # np.empty( (0,3), dtype=float )
 #what a shame to use a loop for this !
 for line in lines: 
     p0, p1 = line ;
-    x_center = (p0[0]+p1[0])/2.0 ;
-    y_center = (p0[1]+p1[1])/2.0 ;
+    x_center = (p0[0]+p1[0])/2.0 ; y_center = (p0[1]+p1[1])/2.0 ;
     vect = np.asarray(p1)-np.asarray(p0) ;
     n_vect = vect/ np.linalg.norm(vect)
     dot_prod = np.dot(n_vect, np.asarray((0,1)) ) ;
     theta  = math.acos(dot_prod) ; 
     quotient, remainder_45 =  divmod(theta+math.pi*2 ,math.pi) 
     #quotient, remainder_30 =  divmod(theta ,math.pi/6.0) 
-    line_array.append(  (x_center,y_center, 80*remainder_45 ) )
+    line_array.append(  (x_center,y_center, 10*remainder_45 ) )
 
 feature_array = None
 feature_array = np.reshape(np.array(line_array), (-1, 3))  ; 
   
 #clustering using DBSCAN algorithm
 
-db = DBSCAN(eps=40, min_samples=5, metric='euclidean', algorithm='auto', leaf_size=30, p=None, random_state=None).fit(feature_array)
+db = DBSCAN(eps=30, min_samples=5, metric='euclidean', algorithm='auto', leaf_size=30, p=None, random_state=None).fit(feature_array)
 
 core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
 core_samples_mask[db.core_sample_indices_] = True
@@ -173,18 +172,14 @@ colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
 for k, col in zip(unique_labels, colors):
     if k == -1:
         # Black used for noise.
-        col = 'k'
-
-    class_member_mask = (labels == k)
-
+        col = 'k' 
+    class_member_mask = (labels == k) 
     xy = feature_array[class_member_mask & core_samples_mask]
     plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
-             markeredgecolor='k', markersize=14)
-
+             markeredgecolor='k', markersize=14) 
     xy = feature_array[class_member_mask & ~core_samples_mask]
     plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=col,
-             markeredgecolor='k', markersize=6)
-
+             markeredgecolor='k', markersize=6) 
 plt.title('Estimated number of clusters: %d' % n_clusters_)
 imshow(sobel_thres, cmap=plt.cm.gray) ; 
 plt.show()
