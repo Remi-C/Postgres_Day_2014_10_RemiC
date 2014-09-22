@@ -129,6 +129,7 @@ for line in lines:
 imshow(sobel_thres, cmap=plt.cm.gray) ; plt.show() ;
 
 
+
 ###line clustering###
 """We need to merge the lines to find the finale ones.
 Fro this we want to compute angle of the liresult_clustering = DBSCAN(eps=10, min_samples=5, metric='euclidean', algorithm='auto', leaf_size=30, p=None, random_state=None).fit(line_array)nes (compared ot origin axisfor instance)
@@ -183,10 +184,21 @@ for k, col in zip(unique_labels, colors):
 plt.title('Estimated number of clusters: %d' % n_clusters_)
 imshow(sobel_thres, cmap=plt.cm.gray) ; 
 plt.show()
+ 
+ 
 
+colors[int(math.floor(labels[5]))]
 
-
-
+ 
+i = 0;
+for line in lines: 
+    p0, p1 = line ; 
+    col =  colors[int(round(labels[i]))]
+    plt.plot((p0[0], p1[0]), (p0[1], p1[1]),color=col, linewidth = 2) ;
+    i = i+1 ; 
+imshow(sobel_thres, cmap=plt.cm.gray) ;  
+plt.show()
+    #linestyle=linestyle, color=color, linewidth=3
 
 #==============================================================================
 # 
