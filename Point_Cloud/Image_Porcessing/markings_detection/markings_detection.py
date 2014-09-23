@@ -89,7 +89,6 @@ height_nan_mask = height_nan_mask.astype(np.bool)
 height_nan_mask = erosion(height_nan_mask, disk(5))
 #viewer.ImageViewer(height_nan_mask).show() ; 
   
-
 ###smoothing of image, using a bilateral filter###
 
 refl_n_f = img_as_float(refl_n,True) ;  
@@ -124,7 +123,7 @@ len(lines)
 
 for line in lines:
     p0, p1 = line ;
-    plt.plot((p0[0], p1[0]), (p0[1], p1[1])) ;
+    plt.plot((p0[0], p1[0]), (p0[1], p1[1]),linewidth = 4) ;
 
 imshow(sobel_thres, cmap=plt.cm.gray) ; plt.show() ;
 
@@ -236,6 +235,16 @@ plt.show()
 #==============================================================================
 
 
+########misc : compute number of level in quadtree
 
+acum = 0;
+for i in range(0,15) :
+    acum += pow(4,i) ;
+    #print 'level : {} , per level : {:e} , total : {:e}'.format( i ,  pow(4,i) ,acum) ;
+    print '{:2} {:10.2g} {:10.2g}'.format( i ,  pow(4,i) ,acum) ;
+    #print '{:g}'.format( pow(4,i) ) ;
 
+    
+for x in range(0, 3):
+    print "We're on time %d" % (x)
 
