@@ -1,0 +1,10 @@
+/method.log
+/point_to_line.qgs
+/pointCloudServer.toc
+*.tdo
+*.synctex.gz
+*.spl
+*.log
+*.out
+*.aux
+*.zip
