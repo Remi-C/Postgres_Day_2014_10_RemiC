@@ -1,0 +1,64 @@
+%% ---------------------------------------------------------------------
+%% Copyright 2014, Thales, IGN, Rémi Cura
+%% 
+%% This file present the method of the article
+%% ---------------------------------------------------------------------
+
+
+\section{Method}
+	\subsection{introduction}
+		In this section we will present our point cloud server solution.
+	 
+		First we  we use a recent analysis of point cloud data usage to detail the system need.
+		Then we present globally our solution.
+		Lastly, we detail how well our solution answer to each need.
+		 
+		\subsubsection{work with point cloud data}
+			Before proposing a new point cloud data management system, we need to have a good idea of what are the common needs of people using point cloud data.
+			We resume ( OO xxx , 2014), and extract requirements for our system. 
+		 	\paragraph{Data IO}
+		 		The most obvious need when working with point cloud data is to \bf {read} and \bf{write} data, and sometime \bf{update} it. 
+		 		The distinction we make between writing and updating is artificial, and represent the situation where we write in a concurrent context.
+		 		(for instance, an algorithm classifying a point cloud, executed in a parallel context).
+		 		From the system perspective, the system should be able to store data (write), and provide data (read), and allow several users (or process) to do both in a concurrency context.
+		 	\paragraph{Data filtering}
+		 		Given the size and diversity of new point cloud data set, reading data is not sufficient. One need to be able to work only on a small part (possibly using parallelism).
+		 		We will refer to this informally has \bf{filtering}, with a broad acceptance : ranging from taking a sub-set of the point cloud to  more active methods like getting only points having certain properties (subsampling, attributes ...)
+		
+			\paragraph{Processing}
+				Processing point cloud data is often the ultimate goal of researcher using those data, and the subject of the majority of article on point cloud.
+				As such, the range of processing methods is very large. That being said, every method needs to work efficiently with it's input data.
+				With huge data, the system should provide easy \bf{partitionning} and \bf{parallelising} options.
+			
+			\paragraph{Visualization}	 			 
+	 			The human visual faculty are very impressive, and visualization of 3D data is not only a global trend for our society, but also a powerful way to understand complex data.
+	 			Yet visualizing billions of points on screen is a challenge and need not only a dedicated graphical solution, but also appropriate subsampling of data (obviously we don't want the rendering engine to render all the points, not even ask for all the points then choose which on to render).
+	 			
+	\subsection{Global presentation}
+		
+	\subsection{Choosing between a filesystem solution and a DBMS solution}
+		
+		;
+ 		talk about nosql trend
+ 		explain that chosing depends on usage
+ 		(ex: pure storing, no access: filesystem way better)
+	\subsection{Storing pg Pointcloud}
+ 		how to store points in base
+ 		-> depends on what we want to do with it
+		\subsubsection{introduction to pg pointcloud}
+		\subsubsection{principle of storing}
+		\subsubsection{compression}
+		\subsection{system data IO}
+		\subsubsection{writting data to the base}
+		\subsubsection{reading data from the base}
+ 			file
+ 			stream : point as a service
+		\subsubsection{update data (concurrently) }
+	\subsection{Filtering data } 
+		\subsubsection{what kind o filtering}
+		\subsubsection{on meta data : several data sources}
+		\subsubsection{spatial}
+		\subsubsection{attribute}
+		\subsubsection{on function result} 
+	\subsection{Process data}
+	\subsection{Visualize data}
