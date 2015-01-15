@@ -5,10 +5,10 @@
     <mapcanvas>
         <units>meters</units>
         <extent>
-            <xmin>1892.6678267773791049</xmin>
-            <ymin>21143.45077379841313814</ymin>
-            <xmax>1922.88815967894288406</xmax>
-            <ymax>21164.06040012350786128</ymax>
+            <xmin>1892.54923030682812168</xmin>
+            <ymin>21123.80803570271746139</ymin>
+            <xmax>1922.7695632083914461</xmax>
+            <ymax>21141.57928570272270008</ymax>
         </extent>
         <projections>1</projections>
         <destinationsrs>
@@ -24,7 +24,7 @@
             </spatialrefsys>
         </destinationsrs>
     </mapcanvas>
-    <legend updateDrawingOrder="true" activeLayer="result_sobel_plus_mask2014_08_19_16_49_05_copier20140820104639609">
+    <legend updateDrawingOrder="true" activeLayer="trottoir20140819185735937">
         <legendlayer drawingOrder="-1" open="true" checked="Qt::Unchecked" name="building_border_detection_points" showFeatureCount="0">
             <filegroup open="true" hidden="false">
                 <legendlayerfile isInOverview="0" layerid="building_border_detection_points20140818193916718" visible="0"/>
@@ -84,17 +84,17 @@
                 </filegroup>
             </legendlayer>
         </legendgroup>
-        <legendgroup open="false" checked="Qt::Unchecked" name="python_sskeleton">
-            <legendlayer drawingOrder="-1" open="false" checked="Qt::Unchecked" name="result_straight_skeleton2014-08-19_11_38_15" showFeatureCount="0">
-                <filegroup open="false" hidden="false">
+        <legendgroup open="true" checked="Qt::Unchecked" name="python_sskeleton">
+            <legendlayer drawingOrder="-1" open="true" checked="Qt::Unchecked" name="result_straight_skeleton2014-08-19_11_38_15" showFeatureCount="0">
+                <filegroup open="true" hidden="false">
                     <legendlayerfile isInOverview="0" layerid="result_straight_skeleton2014_08_19_11_38_1520140819133835500" visible="0"/>
                 </filegroup>
             </legendlayer>
         </legendgroup>
-        <legendgroup open="true" checked="Qt::Unchecked" name="SideWalk">
-            <legendlayer drawingOrder="-1" open="false" checked="Qt::Unchecked" name="result_sobel_plus_mask_sidewalk" showFeatureCount="0">
+        <legendgroup open="true" checked="Qt::PartiallyChecked" name="SideWalk">
+            <legendlayer drawingOrder="-1" open="false" checked="Qt::Checked" name="result_sobel_plus_mask_sidewalk" showFeatureCount="0">
                 <filegroup open="false" hidden="false">
-                    <legendlayerfile isInOverview="0" layerid="result_sobel_plus_mask2014_08_19_16_49_0520140819185830609" visible="0"/>
+                    <legendlayerfile isInOverview="0" layerid="result_sobel_plus_mask2014_08_19_16_49_0520140819185830609" visible="1"/>
                 </filegroup>
             </legendlayer>
             <legendlayer drawingOrder="-1" open="false" checked="Qt::Unchecked" name="result_sobel_plus_mask_texture" showFeatureCount="0">
@@ -3182,12 +3182,12 @@
             <srs>
                 <spatialrefsys>
                     <proj4>+proj=lcc +lat_1=44 +lat_2=49 +lat_0=46.5 +lon_0=3 +x_0=51000 +y_0=-240000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs</proj4>
-                    <srsid>100003</srsid>
+                    <srsid>100000</srsid>
                     <srid>0</srid>
-                    <authid>USER:100003</authid>
-                    <description>Laser_Riegl_TMob_Fevrier_2013</description>
+                    <authid>USER:100000</authid>
+                    <description> * SCR généré (+proj=lcc +lat_1=44 +lat_2=49 +lat_0=46.5 +lon_0=3 +x_0=51000 +y_0=-240000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs)</description>
                     <projectionacronym>lcc</projectionacronym>
-                    <ellipsoidacronym></ellipsoidacronym>
+                    <ellipsoidacronym>GRS80</ellipsoidacronym>
                     <geographicflag>false</geographicflag>
                 </spatialrefsys>
             </srs>
@@ -3563,16 +3563,16 @@
                     <symbol alpha="1" type="line" name="0">
                         <layer pass="2" class="SimpleLine" locked="0">
                             <prop k="capstyle" v="square"/>
-                            <prop k="color" v="56,8,9,255"/>
-                            <prop k="customdash" v="5;2"/>
+                            <prop k="color" v="14,0,56,255"/>
+                            <prop k="customdash" v="5;5"/>
                             <prop k="customdash_unit" v="MM"/>
                             <prop k="draw_inside_polygon" v="0"/>
                             <prop k="joinstyle" v="bevel"/>
                             <prop k="offset" v="0"/>
                             <prop k="offset_unit" v="MM"/>
                             <prop k="penstyle" v="dash"/>
-                            <prop k="use_custom_dash" v="0"/>
-                            <prop k="width" v="0.2"/>
+                            <prop k="use_custom_dash" v="1"/>
+                            <prop k="width" v="0.7"/>
                             <prop k="width_unit" v="MM"/>
                         </layer>
                     </symbol>
@@ -3738,7 +3738,7 @@
             <excludeAttributesWFS/>
             <attributeactions/>
         </maplayer>
-        <maplayer minimumScale="-4.65661e-10" maximumScale="1e+08" simplifyDrawingHints="1" minLabelScale="0" maxLabelScale="1e+08" simplifyDrawingTol="1" geometry="Polygon" simplifyMaxScale="1" type="vector" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" scaleBasedLabelVisibilityFlag="0">
+        <maplayer minimumScale="0" maximumScale="1e+08" simplifyDrawingHints="1" minLabelScale="0" maxLabelScale="1e+08" simplifyDrawingTol="1" geometry="Polygon" simplifyMaxScale="1" type="vector" hasScaleBasedVisibilityFlag="0" simplifyLocal="1" scaleBasedLabelVisibilityFlag="0">
             <id>volume_bati20140818191918734</id>
             <datasource>dbname='odparis' host=localhost port=5433 user='postgres' password='postgres' sslmode=disable key='gid' estimatedmetadata=true srid=932001 type=MULTIPOLYGON table="odparis_corrected"."volume_bati" (geom) sql=</datasource>
             <title></title>
@@ -3767,7 +3767,7 @@
                     <symbol alpha="1" type="fill" name="0">
                         <layer pass="0" class="SimpleFill" locked="0">
                             <prop k="border_width_unit" v="MM"/>
-                            <prop k="color" v="147,147,147,255"/>
+                            <prop k="color" v="97,97,97,255"/>
                             <prop k="color_border" v="0,0,0,255"/>
                             <prop k="offset" v="0,0"/>
                             <prop k="offset_unit" v="MM"/>
